@@ -13,6 +13,11 @@ import type { Principal } from '@icp-sdk/core/principal';
 export interface DailyWinner { 'user' : Principal, 'amount' : bigint }
 export type GameResult = { 'win' : null } |
   { 'lose' : null };
+export interface GameSettings {
+  'minBet' : bigint,
+  'winMultiplier' : number,
+  'maxBet' : bigint,
+}
 export type GameType = { 'war' : null } |
   { 'mines' : null } |
   { 'penaltyShootout' : null } |
@@ -38,6 +43,24 @@ export type GameType = { 'war' : null } |
   { 'casinoHoldem' : null } |
   { 'coinPusher' : null } |
   { 'crashGame' : null };
+export interface Product {
+  'id' : string,
+  'name' : string,
+  'description' : string,
+  'available' : boolean,
+  'pointPrice' : bigint,
+  'category' : string,
+}
+export interface RedemptionRequest {
+  'id' : string,
+  'status' : string,
+  'userName' : string,
+  'user' : Principal,
+  'productId' : string,
+  'productName' : string,
+  'timestamp' : Time,
+  'pointPrice' : bigint,
+}
 export type Time = bigint;
 export interface UserGame {
   'bet' : bigint,
@@ -51,21 +74,48 @@ export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
+export interface UserSummary {
+  'principal' : Principal,
+  'balance' : bigint,
+  'joinDate' : Time,
+  'name' : string,
+  'role' : string,
+  'totalGamesPlayed' : bigint,
+  'totalCreditsWon' : bigint,
+  'points' : bigint,
+}
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addCredits' : ActorMethod<[Principal, bigint], undefined>,
+  'addProduct' : ActorMethod<[string, string, string, bigint], Product>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'claimDailyCredits' : ActorMethod<[], undefined>,
+  'getAllGameSettings' : ActorMethod<[], Array<[string, GameSettings]>>,
+  'getAllProducts' : ActorMethod<[], Array<Product>>,
+  'getAllProductsAdmin' : ActorMethod<[], Array<Product>>,
+  'getAllRedemptions' : ActorMethod<[], Array<RedemptionRequest>>,
+  'getAllUsers' : ActorMethod<[], Array<UserSummary>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDailyWinners' : ActorMethod<[], Array<DailyWinner>>,
   'getGameHistory' : ActorMethod<[Principal], Array<UserGame>>,
+  'getGameSettings' : ActorMethod<[GameType], [] | [GameSettings]>,
+  'getMyRedemptions' : ActorMethod<[], Array<RedemptionRequest>>,
+  'getPointsBalance' : ActorMethod<[], bigint>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getWalletBalance' : ActorMethod<[], bigint>,
   'initializeBalance' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'playGame' : ActorMethod<[GameType, bigint], UserGame>,
+  'redeemProduct' : ActorMethod<[string], RedemptionRequest>,
+  'removeProduct' : ActorMethod<[string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setGameSettings' : ActorMethod<[GameType, GameSettings], undefined>,
+  'updateProduct' : ActorMethod<
+    [string, string, string, string, bigint, boolean],
+    Product
+  >,
+  'updateRedemptionStatus' : ActorMethod<[string, string], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

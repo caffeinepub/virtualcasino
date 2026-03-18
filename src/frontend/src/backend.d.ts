@@ -7,6 +7,15 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+export interface DailyWinner {
+    user: Principal;
+    amount: bigint;
+}
+export interface GameSettings {
+    minBet: bigint;
+    winMultiplier: number;
+    maxBet: bigint;
+}
 export type Time = bigint;
 export interface UserGame {
     bet: bigint;
@@ -16,26 +25,36 @@ export interface UserGame {
     gameType: GameType;
     balanceChange: bigint;
 }
-export interface DailyWinner {
+export interface RedemptionRequest {
+    id: string;
+    status: string;
+    userName: string;
     user: Principal;
-    amount: bigint;
-}
-export interface UserProfile {
-    name: string;
-}
-export interface GameSettings {
-    minBet: bigint;
-    maxBet: bigint;
-    winMultiplier: number;
+    productId: string;
+    productName: string;
+    timestamp: Time;
+    pointPrice: bigint;
 }
 export interface UserSummary {
     principal: Principal;
-    name: string;
     balance: bigint;
+    joinDate: Time;
+    name: string;
     role: string;
-    joinDate: bigint;
     totalGamesPlayed: bigint;
     totalCreditsWon: bigint;
+    points: bigint;
+}
+export interface Product {
+    id: string;
+    name: string;
+    description: string;
+    available: boolean;
+    pointPrice: bigint;
+    category: string;
+}
+export interface UserProfile {
+    name: string;
 }
 export enum GameResult {
     win = "win",
@@ -75,20 +94,30 @@ export enum UserRole {
 }
 export interface backendInterface {
     addCredits(user: Principal, amount: bigint): Promise<void>;
+    addProduct(name: string, description: string, category: string, pointPrice: bigint): Promise<Product>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     claimDailyCredits(): Promise<void>;
+    getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
+    getAllProducts(): Promise<Array<Product>>;
+    getAllProductsAdmin(): Promise<Array<Product>>;
+    getAllRedemptions(): Promise<Array<RedemptionRequest>>;
+    getAllUsers(): Promise<Array<UserSummary>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyWinners(): Promise<Array<DailyWinner>>;
     getGameHistory(user: Principal): Promise<Array<UserGame>>;
+    getGameSettings(gameType: GameType): Promise<GameSettings | null>;
+    getMyRedemptions(): Promise<Array<RedemptionRequest>>;
+    getPointsBalance(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getWalletBalance(): Promise<bigint>;
     initializeBalance(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     playGame(gameType: GameType, bet: bigint): Promise<UserGame>;
+    redeemProduct(productId: string): Promise<RedemptionRequest>;
+    removeProduct(id: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     setGameSettings(gameType: GameType, settings: GameSettings): Promise<void>;
-    getGameSettings(gameType: GameType): Promise<GameSettings | null>;
-    getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
-    getAllUsers(): Promise<Array<UserSummary>>;
+    updateProduct(id: string, name: string, description: string, category: string, pointPrice: bigint, available: boolean): Promise<Product>;
+    updateRedemptionStatus(id: string, status: string): Promise<void>;
 }

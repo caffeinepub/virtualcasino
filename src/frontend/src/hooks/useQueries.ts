@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   GameSettings,
   GameType,
+  Product,
   UserProfile,
   UserRole,
 } from "../backend.d";
@@ -148,6 +149,7 @@ export function usePlayGame() {
       qc.invalidateQueries({ queryKey: ["walletBalance"] });
       qc.invalidateQueries({ queryKey: ["gameHistory"] });
       qc.invalidateQueries({ queryKey: ["dailyWinners"] });
+      qc.invalidateQueries({ queryKey: ["pointsBalance"] });
     },
   });
 }
@@ -213,6 +215,178 @@ export function useSetGameSettings() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allGameSettings"] });
+    },
+  });
+}
+
+// ─── Points Shop Hooks ────────────────────────────────────────────────────────
+
+export function useGetPointsBalance() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<bigint>({
+    queryKey: ["pointsBalance"],
+    queryFn: async () => {
+      if (!actor) return BigInt(0);
+      return (actor as any).getPointsBalance();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+    refetchInterval: 15000,
+  });
+}
+
+export function useGetAllProducts() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Product[]>({
+    queryKey: ["products"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getAllProducts();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useGetAllProductsAdmin() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<Product[]>({
+    queryKey: ["productsAdmin"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getAllProductsAdmin();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
+export function useGetMyRedemptions() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery({
+    queryKey: ["myRedemptions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getMyRedemptions();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
+export function useGetAllRedemptions() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery({
+    queryKey: ["allRedemptions"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getAllRedemptions();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
+export function useAddProduct() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      name,
+      description,
+      category,
+      pointPrice,
+    }: {
+      name: string;
+      description: string;
+      category: string;
+      pointPrice: bigint;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).addProduct(name, description, category, pointPrice);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productsAdmin"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      name,
+      description,
+      category,
+      pointPrice,
+      available,
+    }: {
+      id: string;
+      name: string;
+      description: string;
+      category: string;
+      pointPrice: bigint;
+      available: boolean;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).updateProduct(
+        id,
+        name,
+        description,
+        category,
+        pointPrice,
+        available,
+      );
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productsAdmin"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+
+export function useRemoveProduct() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).removeProduct(id);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productsAdmin"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+
+export function useRedeemProduct() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).redeemProduct(productId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pointsBalance"] });
+      qc.invalidateQueries({ queryKey: ["myRedemptions"] });
+    },
+  });
+}
+
+export function useUpdateRedemptionStatus() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).updateRedemptionStatus(id, status);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allRedemptions"] });
     },
   });
 }

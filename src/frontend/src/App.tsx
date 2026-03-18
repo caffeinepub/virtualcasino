@@ -14,6 +14,7 @@ import HistoryPage from "./pages/HistoryPage";
 import HomePage from "./pages/HomePage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import LobbyPage from "./pages/LobbyPage";
+import PointsShopPage from "./pages/PointsShopPage";
 import StaffPage from "./pages/StaffPage";
 
 const rootRoute = createRootRoute({
@@ -76,6 +77,12 @@ const staffRoute = createRoute({
   component: StaffPage,
 });
 
+const shopRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/shop",
+  component: PointsShopPage,
+});
+
 const routeTree = rootRoute.addChildren([
   authRoute,
   publicLayoutRoute.addChildren([indexRoute]),
@@ -85,6 +92,7 @@ const routeTree = rootRoute.addChildren([
     historyRoute,
     leaderboardRoute,
     staffRoute,
+    shopRoute,
   ]),
 ]);
 

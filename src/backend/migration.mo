@@ -1,106 +1,110 @@
 import Map "mo:core/Map";
 import List "mo:core/List";
 import Time "mo:core/Time";
-import Array "mo:core/Array";
+import Nat "mo:core/Nat";
 import Int "mo:core/Int";
+import Float "mo:core/Float";
 import Principal "mo:core/Principal";
-import AccessControl "authorization/access-control";
 
 module {
-  type OldGameResult = { #win; #lose };
-  type OldGameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat };
-  type OldDailyWinner = {
+  type GameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat; #keno; #scratchCards; #craps; #paiGowPoker; #sicBo; #war; #caribbeanStud; #letItRide; #threeCardPoker; #casinoHoldem; #wheelOfFortune; #coinPusher; #plinko; #crashGame; #mines; #limbo; #hiLo; #penaltyShootout; #ballDrop };
+  type GameResult = { #win; #lose };
+  type DailyWinner = {
     user : Principal;
     amount : Int;
   };
 
-  type OldUserGame = {
+  type UserProfile = {
+    name : Text;
+  };
+
+  type GameSettings = {
+    minBet : Nat;
+    maxBet : Nat;
+    winMultiplier : Float;
+  };
+
+  type UserSummary = {
+    principal : Principal;
+    name : Text;
+    balance : Int;
+    points : Int;
+    role : Text;
+    joinDate : Time.Time;
+    totalGamesPlayed : Nat;
+    totalCreditsWon : Int;
+  };
+
+  type Product = {
+    id : Text;
+    name : Text;
+    description : Text;
+    category : Text;
+    pointPrice : Nat;
+    available : Bool;
+  };
+
+  type RedemptionRequest = {
+    id : Text;
     user : Principal;
-    gameType : OldGameType;
-    bet : Nat;
-    result : OldGameResult;
+    userName : Text;
+    productId : Text;
+    productName : Text;
+    pointPrice : Nat;
     timestamp : Time.Time;
-    balanceChange : Int;
+    status : Text;
   };
 
-  type OldActor = {
-    dailyWinners : List.List<OldDailyWinner>;
-    gameHistory : Map.Map<Principal, List.List<OldUserGame>>;
+  type CurrentActor = {
     userBalances : Map.Map<Principal, Int>;
+    gameHistory : Map.Map<Principal, List.List<UserGame>>;
+    dailyWinners : List.List<DailyWinner>;
     lastClaimDay : Map.Map<Principal, Time.Time>;
-    gameResultArray : [OldGameResult];
-    casinoWallet : Int;
-    accessControlState : AccessControl.AccessControlState;
-    userProfiles : Map.Map<Principal, { name : Text }>;
+    userProfiles : Map.Map<Principal, UserProfile>;
+    userJoinDates : Map.Map<Principal, Time.Time>;
+    userTotalGamesPlayed : Map.Map<Principal, Nat>;
+    userTotalCreditsWon : Map.Map<Principal, Int>;
+    gameSettingsMap : Map.Map<Text, GameSettings>;
   };
 
-  type NewGameResult = { #win; #lose };
-  type NewGameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat; #keno; #scratchCards; #craps; #paiGowPoker; #sicBo; #war; #caribbeanStud; #letItRide; #threeCardPoker; #casinoHoldem; #wheelOfFortune; #coinPusher; #plinko; #crashGame; #mines; #limbo; #hiLo; #penaltyShootout; #ballDrop };
-  type NewDailyWinner = {
+  type UserGame = {
     user : Principal;
-    amount : Int;
-  };
-
-  type NewUserGame = {
-    user : Principal;
-    gameType : NewGameType;
+    gameType : GameType;
     bet : Nat;
-    result : NewGameResult;
+    result : GameResult;
     timestamp : Time.Time;
     balanceChange : Int;
   };
 
   type NewActor = {
-    dailyWinners : List.List<NewDailyWinner>;
-    gameHistory : Map.Map<Principal, List.List<NewUserGame>>;
     userBalances : Map.Map<Principal, Int>;
+    userPoints : Map.Map<Principal, Int>;
+    gameHistory : Map.Map<Principal, List.List<UserGame>>;
+    dailyWinners : List.List<DailyWinner>;
     lastClaimDay : Map.Map<Principal, Time.Time>;
-    gameResultArray : [NewGameResult];
-    casinoWallet : Int;
-    accessControlState : AccessControl.AccessControlState;
-    userProfiles : Map.Map<Principal, { name : Text }>;
+    userProfiles : Map.Map<Principal, UserProfile>;
+    userJoinDates : Map.Map<Principal, Time.Time>;
+    userTotalGamesPlayed : Map.Map<Principal, Nat>;
+    userTotalCreditsWon : Map.Map<Principal, Int>;
+    gameSettingsMap : Map.Map<Text, GameSettings>;
+    productsMap : Map.Map<Text, Product>;
+    nextProductId : Nat;
+    redemptionsMap : Map.Map<Text, RedemptionRequest>;
+    nextRedemptionId : Nat;
   };
 
-  func convertGameType(oldGameType : OldGameType) : NewGameType {
-    switch (oldGameType) {
-      case (#slots) { #slots };
-      case (#blackjack) { #blackjack };
-      case (#roulette) { #roulette };
-      case (#videoPoker) { #videoPoker };
-      case (#dice) { #dice };
-      case (#baccarat) { #baccarat };
-    };
+  func emptyMap<K, V>() : Map.Map<K, V> {
+    Map.empty<K, V>();
   };
 
-  func convertGameResult(oldGameResult : OldGameResult) : NewGameResult {
-    switch (oldGameResult) {
-      case (#win) { #win };
-      case (#lose) { #lose };
-    };
-  };
-
-  func convertOldGame(oldGame : OldUserGame) : NewUserGame {
+  public func run(current : CurrentActor) : NewActor {
     {
-      oldGame with
-      result = convertGameResult(oldGame.result);
-      gameType = convertGameType(oldGame.gameType);
-    };
-  };
-
-  func convertGameHistory(oldGameHistory : Map.Map<Principal, List.List<OldUserGame>>) : Map.Map<Principal, List.List<NewUserGame>> {
-    oldGameHistory.map<Principal, List.List<OldUserGame>, List.List<NewUserGame>>(
-      func(_principal, oldList) {
-        let newList = oldList.map<OldUserGame, NewUserGame>(convertOldGame);
-        newList;
-      }
-    );
-  };
-
-  public func run(old : OldActor) : NewActor {
-    {
-      old with
-      gameHistory = convertGameHistory(old.gameHistory);
-      gameResultArray = [#win, #lose];
+      current with
+      userPoints = current.userBalances.map<Principal, Int, Int>(func(_k, _v) { 0 });
+      productsMap = emptyMap<Text, Product>();
+      nextProductId = 1;
+      redemptionsMap = emptyMap<Text, RedemptionRequest>();
+      nextRedemptionId = 1;
     };
   };
 };

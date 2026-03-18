@@ -89,6 +89,15 @@ export class ExternalBlob {
         return this;
     }
 }
+export interface DailyWinner {
+    user: Principal;
+    amount: bigint;
+}
+export interface GameSettings {
+    minBet: bigint;
+    winMultiplier: number;
+    maxBet: bigint;
+}
 export type Time = bigint;
 export interface UserGame {
     bet: bigint;
@@ -98,9 +107,33 @@ export interface UserGame {
     gameType: GameType;
     balanceChange: bigint;
 }
-export interface DailyWinner {
+export interface RedemptionRequest {
+    id: string;
+    status: string;
+    userName: string;
     user: Principal;
-    amount: bigint;
+    productId: string;
+    productName: string;
+    timestamp: Time;
+    pointPrice: bigint;
+}
+export interface UserSummary {
+    principal: Principal;
+    balance: bigint;
+    joinDate: Time;
+    name: string;
+    role: string;
+    totalGamesPlayed: bigint;
+    totalCreditsWon: bigint;
+    points: bigint;
+}
+export interface Product {
+    id: string;
+    name: string;
+    description: string;
+    available: boolean;
+    pointPrice: bigint;
+    category: string;
 }
 export interface UserProfile {
     name: string;
@@ -144,20 +177,34 @@ export enum UserRole {
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addCredits(user: Principal, amount: bigint): Promise<void>;
+    addProduct(name: string, description: string, category: string, pointPrice: bigint): Promise<Product>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     claimDailyCredits(): Promise<void>;
+    getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
+    getAllProducts(): Promise<Array<Product>>;
+    getAllProductsAdmin(): Promise<Array<Product>>;
+    getAllRedemptions(): Promise<Array<RedemptionRequest>>;
+    getAllUsers(): Promise<Array<UserSummary>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyWinners(): Promise<Array<DailyWinner>>;
     getGameHistory(user: Principal): Promise<Array<UserGame>>;
+    getGameSettings(gameType: GameType): Promise<GameSettings | null>;
+    getMyRedemptions(): Promise<Array<RedemptionRequest>>;
+    getPointsBalance(): Promise<bigint>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getWalletBalance(): Promise<bigint>;
     initializeBalance(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     playGame(gameType: GameType, bet: bigint): Promise<UserGame>;
+    redeemProduct(productId: string): Promise<RedemptionRequest>;
+    removeProduct(id: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setGameSettings(gameType: GameType, settings: GameSettings): Promise<void>;
+    updateProduct(id: string, name: string, description: string, category: string, pointPrice: bigint, available: boolean): Promise<Product>;
+    updateRedemptionStatus(id: string, status: string): Promise<void>;
 }
-import type { GameResult as _GameResult, GameType as _GameType, Time as _Time, UserGame as _UserGame, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { GameResult as _GameResult, GameSettings as _GameSettings, GameType as _GameType, Time as _Time, UserGame as _UserGame, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -188,6 +235,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addProduct(arg0: string, arg1: string, arg2: string, arg3: bigint): Promise<Product> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addProduct(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addProduct(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
     async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
         if (this.processError) {
             try {
@@ -213,6 +274,76 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.claimDailyCredits();
+            return result;
+        }
+    }
+    async getAllGameSettings(): Promise<Array<[string, GameSettings]>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllGameSettings();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllGameSettings();
+            return result;
+        }
+    }
+    async getAllProducts(): Promise<Array<Product>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllProducts();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllProducts();
+            return result;
+        }
+    }
+    async getAllProductsAdmin(): Promise<Array<Product>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllProductsAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllProductsAdmin();
+            return result;
+        }
+    }
+    async getAllRedemptions(): Promise<Array<RedemptionRequest>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllRedemptions();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllRedemptions();
+            return result;
+        }
+    }
+    async getAllUsers(): Promise<Array<UserSummary>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllUsers();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllUsers();
             return result;
         }
     }
@@ -270,6 +401,48 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getGameHistory(arg0);
             return from_candid_vec_n6(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getGameSettings(arg0: GameType): Promise<GameSettings | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0));
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0));
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getMyRedemptions(): Promise<Array<RedemptionRequest>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getMyRedemptions();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getMyRedemptions();
+            return result;
+        }
+    }
+    async getPointsBalance(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPointsBalance();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPointsBalance();
+            return result;
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
@@ -342,6 +515,34 @@ export class Backend implements backendInterface {
             return from_candid_UserGame_n7(this._uploadFile, this._downloadFile, result);
         }
     }
+    async redeemProduct(arg0: string): Promise<RedemptionRequest> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.redeemProduct(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.redeemProduct(arg0);
+            return result;
+        }
+    }
+    async removeProduct(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.removeProduct(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.removeProduct(arg0);
+            return result;
+        }
+    }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
@@ -353,6 +554,48 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async setGameSettings(arg0: GameType, arg1: GameSettings): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0), arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0), arg1);
+            return result;
+        }
+    }
+    async updateProduct(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint, arg5: boolean): Promise<Product> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateProduct(arg0, arg1, arg2, arg3, arg4, arg5);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateProduct(arg0, arg1, arg2, arg3, arg4, arg5);
+            return result;
+        }
+    }
+    async updateRedemptionStatus(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateRedemptionStatus(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateRedemptionStatus(arg0, arg1);
             return result;
         }
     }
@@ -368,6 +611,9 @@ function from_candid_UserGame_n7(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }
 function from_candid_UserRole_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n5(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_GameSettings]): GameSettings | null {
+    return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
     return value.length === 0 ? null : value[0];

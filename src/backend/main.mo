@@ -12,8 +12,9 @@ import Principal "mo:core/Principal";
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Migration "migration";
 
-
+(with migration = Migration.run)
 actor {
   type GameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat; #keno; #scratchCards; #craps; #paiGowPoker; #sicBo; #war; #caribbeanStud; #letItRide; #threeCardPoker; #casinoHoldem; #wheelOfFortune; #coinPusher; #plinko; #crashGame; #mines; #limbo; #hiLo; #penaltyShootout; #ballDrop };
   type GameResult = { #win; #lose };
@@ -36,10 +37,31 @@ actor {
     principal : Principal;
     name : Text;
     balance : Int;
+    points : Int;
     role : Text;
     joinDate : Time.Time;
     totalGamesPlayed : Nat;
     totalCreditsWon : Int;
+  };
+
+  public type Product = {
+    id : Text;
+    name : Text;
+    description : Text;
+    category : Text;
+    pointPrice : Nat;
+    available : Bool;
+  };
+
+  public type RedemptionRequest = {
+    id : Text;
+    user : Principal;
+    userName : Text;
+    productId : Text;
+    productName : Text;
+    pointPrice : Nat;
+    timestamp : Time.Time;
+    status : Text;
   };
 
   func compareByWalletBalance(winner1 : DailyWinner, winner2 : DailyWinner) : Order.Order {
@@ -72,6 +94,7 @@ actor {
   };
 
   let userBalances = Map.empty<Principal, Int>();
+  let userPoints = Map.empty<Principal, Int>();
   let gameHistory = Map.empty<Principal, List.List<UserGame>>();
   let dailyWinners = List.empty<DailyWinner>();
   var lastClaimDay = Map.empty<Principal, Time.Time>();
@@ -80,6 +103,11 @@ actor {
   let userTotalGamesPlayed = Map.empty<Principal, Nat>();
   let userTotalCreditsWon = Map.empty<Principal, Int>();
   let gameSettingsMap = Map.empty<Text, GameSettings>();
+
+  let productsMap = Map.empty<Text, Product>();
+  var nextProductId = 1;
+  let redemptionsMap = Map.empty<Text, RedemptionRequest>();
+  var nextRedemptionId = 1;
 
   func gameTypeToText(g : GameType) : Text {
     switch (g) {
@@ -121,6 +149,7 @@ actor {
       case (null) {};
     };
     userBalances.add(caller, 10);
+    userPoints.add(caller, 0);
     userJoinDates.add(caller, Time.now());
     userTotalGamesPlayed.add(caller, 0);
     userTotalCreditsWon.add(caller, 0);
@@ -132,6 +161,16 @@ actor {
     };
     switch (userBalances.get(caller)) {
       case (?balance) { balance };
+      case (null) { Runtime.trap("User not found") };
+    };
+  };
+
+  public query ({ caller }) func getPointsBalance() : async Int {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view points balance");
+    };
+    switch (userPoints.get(caller)) {
+      case (?points) { points };
       case (null) { Runtime.trap("User not found") };
     };
   };
@@ -230,11 +269,16 @@ actor {
           case (?n) { n };
           case (null) { 0 };
         };
+        let points = switch (userPoints.get(p)) {
+          case (?pt) { pt };
+          case (null) { 0 };
+        };
         let role = if (AccessControl.isAdmin(accessControlState, p)) { "admin" } else { "user" };
         {
           principal = p;
           name;
           balance = bal;
+          points;
           role;
           joinDate;
           totalGamesPlayed;
@@ -321,6 +365,12 @@ actor {
         case (?n) { n }; case (null) { 0 };
       };
       userTotalCreditsWon.add(caller, prevWon + balanceChange);
+
+      // Add points for winning
+      let prevPoints = switch (userPoints.get(caller)) {
+        case (?n) { n }; case (null) { 0 };
+      };
+      userPoints.add(caller, prevPoints + balanceChange);
     };
 
     newGame;
@@ -340,5 +390,149 @@ actor {
     let sortedList = dailyWinners.toArray().sort(compareByWalletBalance);
     let shuffled = sortedList.sort(compareByRandom);
     shuffled.sliceToArray(0, Int.abs(Nat.min(10, shuffled.size())));
+  };
+
+  // Products system
+  public shared ({ caller }) func addProduct(name : Text, description : Text, category : Text, pointPrice : Nat) : async Product {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can add products");
+    };
+
+    let product : Product = {
+      id = nextProductId.toText();
+      name;
+      description;
+      category;
+      pointPrice;
+      available = true;
+    };
+    productsMap.add(product.id, product);
+    nextProductId += 1;
+    product;
+  };
+
+  public shared ({ caller }) func updateProduct(id : Text, name : Text, description : Text, category : Text, pointPrice : Nat, available : Bool) : async Product {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update products");
+    };
+
+    let product : Product = {
+      id;
+      name;
+      description;
+      category;
+      pointPrice;
+      available;
+    };
+    productsMap.add(id, product);
+    product;
+  };
+
+  public shared ({ caller }) func removeProduct(id : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can remove products");
+    };
+    switch (productsMap.get(id)) {
+      case (?product) {
+        let updatedProduct : Product = {
+          product with available = false;
+        };
+        productsMap.add(id, updatedProduct);
+      };
+      case (null) {
+        Runtime.trap("Product not found");
+      };
+    };
+  };
+
+  public query func getAllProducts() : async [Product] {
+    let all = productsMap.values().toArray();
+    all.filter(func(p) { p.available });
+  };
+
+  public query ({ caller }) func getAllProductsAdmin() : async [Product] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view all products");
+    };
+    productsMap.values().toArray();
+  };
+
+  // Redemption system
+  public shared ({ caller }) func redeemProduct(productId : Text) : async RedemptionRequest {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can redeem products");
+    };
+
+    let product = switch (productsMap.get(productId)) {
+      case (?p) { p };
+      case (null) {
+        Runtime.trap("Product not found");
+      };
+    };
+
+    if (not product.available) {
+      Runtime.trap("Product is not available");
+    };
+
+    let userPointsBalance = switch (userPoints.get(caller)) {
+      case (?points) { points };
+      case (null) { 0 };
+    };
+
+    if (userPointsBalance < product.pointPrice) {
+      Runtime.trap("Not enough points to redeem this product");
+    };
+
+    userPoints.add(caller, userPointsBalance - product.pointPrice);
+    let userName = switch (userProfiles.get(caller)) {
+      case (?profile) { profile.name };
+      case (null) { "Anonymous" };
+    };
+
+    let redemption : RedemptionRequest = {
+      id = nextRedemptionId.toText();
+      user = caller;
+      userName;
+      productId = product.id;
+      productName = product.name;
+      pointPrice = product.pointPrice;
+      timestamp = Time.now();
+      status = "Pending";
+    };
+    redemptionsMap.add(redemption.id, redemption);
+    nextRedemptionId += 1;
+    redemption;
+  };
+
+  public query ({ caller }) func getAllRedemptions() : async [RedemptionRequest] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view redemption requests");
+    };
+    redemptionsMap.values().toArray();
+  };
+
+  public shared ({ caller }) func updateRedemptionStatus(id : Text, status : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update redemption status");
+    };
+    switch (redemptionsMap.get(id)) {
+      case (?redemption) {
+        let updatedRedemption : RedemptionRequest = {
+          redemption with status;
+        };
+        redemptionsMap.add(id, updatedRedemption);
+      };
+      case (null) {
+        Runtime.trap("Redemption request not found");
+      };
+    };
+  };
+
+  public query ({ caller }) func getMyRedemptions() : async [RedemptionRequest] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view redemption requests");
+    };
+    let all = redemptionsMap.values().toArray();
+    all.filter(func(r) { r.user == caller });
   };
 };

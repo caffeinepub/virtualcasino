@@ -8,10 +8,44 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const Product = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'description' : IDL.Text,
+  'available' : IDL.Bool,
+  'pointPrice' : IDL.Nat,
+  'category' : IDL.Text,
+});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
+});
+export const GameSettings = IDL.Record({
+  'minBet' : IDL.Nat,
+  'winMultiplier' : IDL.Float64,
+  'maxBet' : IDL.Nat,
+});
+export const Time = IDL.Int;
+export const RedemptionRequest = IDL.Record({
+  'id' : IDL.Text,
+  'status' : IDL.Text,
+  'userName' : IDL.Text,
+  'user' : IDL.Principal,
+  'productId' : IDL.Text,
+  'productName' : IDL.Text,
+  'timestamp' : Time,
+  'pointPrice' : IDL.Nat,
+});
+export const UserSummary = IDL.Record({
+  'principal' : IDL.Principal,
+  'balance' : IDL.Int,
+  'joinDate' : Time,
+  'name' : IDL.Text,
+  'role' : IDL.Text,
+  'totalGamesPlayed' : IDL.Nat,
+  'totalCreditsWon' : IDL.Int,
+  'points' : IDL.Int,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const DailyWinner = IDL.Record({
@@ -19,7 +53,6 @@ export const DailyWinner = IDL.Record({
   'amount' : IDL.Int,
 });
 export const GameResult = IDL.Variant({ 'win' : IDL.Null, 'lose' : IDL.Null });
-export const Time = IDL.Int;
 export const GameType = IDL.Variant({
   'war' : IDL.Null,
   'mines' : IDL.Null,
@@ -59,12 +92,29 @@ export const UserGame = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addCredits' : IDL.Func([IDL.Principal, IDL.Nat], [], []),
+  'addProduct' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Nat],
+      [Product],
+      [],
+    ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'claimDailyCredits' : IDL.Func([], [], []),
+  'getAllGameSettings' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, GameSettings))],
+      ['query'],
+    ),
+  'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getAllProductsAdmin' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getAllRedemptions' : IDL.Func([], [IDL.Vec(RedemptionRequest)], ['query']),
+  'getAllUsers' : IDL.Func([], [IDL.Vec(UserSummary)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getDailyWinners' : IDL.Func([], [IDL.Vec(DailyWinner)], ['query']),
   'getGameHistory' : IDL.Func([IDL.Principal], [IDL.Vec(UserGame)], ['query']),
+  'getGameSettings' : IDL.Func([GameType], [IDL.Opt(GameSettings)], ['query']),
+  'getMyRedemptions' : IDL.Func([], [IDL.Vec(RedemptionRequest)], ['query']),
+  'getPointsBalance' : IDL.Func([], [IDL.Int], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -74,16 +124,59 @@ export const idlService = IDL.Service({
   'initializeBalance' : IDL.Func([], [], []),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'playGame' : IDL.Func([GameType, IDL.Nat], [UserGame], []),
+  'redeemProduct' : IDL.Func([IDL.Text], [RedemptionRequest], []),
+  'removeProduct' : IDL.Func([IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setGameSettings' : IDL.Func([GameType, GameSettings], [], []),
+  'updateProduct' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Bool],
+      [Product],
+      [],
+    ),
+  'updateRedemptionStatus' : IDL.Func([IDL.Text, IDL.Text], [], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const Product = IDL.Record({
+    'id' : IDL.Text,
+    'name' : IDL.Text,
+    'description' : IDL.Text,
+    'available' : IDL.Bool,
+    'pointPrice' : IDL.Nat,
+    'category' : IDL.Text,
+  });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
+  });
+  const GameSettings = IDL.Record({
+    'minBet' : IDL.Nat,
+    'winMultiplier' : IDL.Float64,
+    'maxBet' : IDL.Nat,
+  });
+  const Time = IDL.Int;
+  const RedemptionRequest = IDL.Record({
+    'id' : IDL.Text,
+    'status' : IDL.Text,
+    'userName' : IDL.Text,
+    'user' : IDL.Principal,
+    'productId' : IDL.Text,
+    'productName' : IDL.Text,
+    'timestamp' : Time,
+    'pointPrice' : IDL.Nat,
+  });
+  const UserSummary = IDL.Record({
+    'principal' : IDL.Principal,
+    'balance' : IDL.Int,
+    'joinDate' : Time,
+    'name' : IDL.Text,
+    'role' : IDL.Text,
+    'totalGamesPlayed' : IDL.Nat,
+    'totalCreditsWon' : IDL.Int,
+    'points' : IDL.Int,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const DailyWinner = IDL.Record({
@@ -91,7 +184,6 @@ export const idlFactory = ({ IDL }) => {
     'amount' : IDL.Int,
   });
   const GameResult = IDL.Variant({ 'win' : IDL.Null, 'lose' : IDL.Null });
-  const Time = IDL.Int;
   const GameType = IDL.Variant({
     'war' : IDL.Null,
     'mines' : IDL.Null,
@@ -131,8 +223,22 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addCredits' : IDL.Func([IDL.Principal, IDL.Nat], [], []),
+    'addProduct' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Nat],
+        [Product],
+        [],
+      ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'claimDailyCredits' : IDL.Func([], [], []),
+    'getAllGameSettings' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, GameSettings))],
+        ['query'],
+      ),
+    'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getAllProductsAdmin' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getAllRedemptions' : IDL.Func([], [IDL.Vec(RedemptionRequest)], ['query']),
+    'getAllUsers' : IDL.Func([], [IDL.Vec(UserSummary)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getDailyWinners' : IDL.Func([], [IDL.Vec(DailyWinner)], ['query']),
@@ -141,6 +247,13 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(UserGame)],
         ['query'],
       ),
+    'getGameSettings' : IDL.Func(
+        [GameType],
+        [IDL.Opt(GameSettings)],
+        ['query'],
+      ),
+    'getMyRedemptions' : IDL.Func([], [IDL.Vec(RedemptionRequest)], ['query']),
+    'getPointsBalance' : IDL.Func([], [IDL.Int], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -150,7 +263,16 @@ export const idlFactory = ({ IDL }) => {
     'initializeBalance' : IDL.Func([], [], []),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'playGame' : IDL.Func([GameType, IDL.Nat], [UserGame], []),
+    'redeemProduct' : IDL.Func([IDL.Text], [RedemptionRequest], []),
+    'removeProduct' : IDL.Func([IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setGameSettings' : IDL.Func([GameType, GameSettings], [], []),
+    'updateProduct' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Bool],
+        [Product],
+        [],
+      ),
+    'updateRedemptionStatus' : IDL.Func([IDL.Text, IDL.Text], [], []),
   });
 };
 

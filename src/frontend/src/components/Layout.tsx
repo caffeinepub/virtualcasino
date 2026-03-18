@@ -10,6 +10,8 @@ import {
   Loader2,
   LogOut,
   ShieldCheck,
+  ShoppingBag,
+  Star,
   Trophy,
   Zap,
 } from "lucide-react";
@@ -19,6 +21,7 @@ import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
   useClaimDailyCredits,
   useGetCallerUserRole,
+  useGetPointsBalance,
   useGetWalletBalance,
 } from "../hooks/useQueries";
 
@@ -30,6 +33,7 @@ export default function Layout() {
   const isAuthenticated = !!identity;
 
   const { data: balance } = useGetWalletBalance();
+  const { data: points } = useGetPointsBalance();
   const { data: role } = useGetCallerUserRole();
   const { mutateAsync: claimDaily, isPending: claiming } =
     useClaimDailyCredits();
@@ -62,10 +66,13 @@ export default function Layout() {
   if (isInitializing) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin neon-pink" />
-          <p className="text-neon-gradient font-bold tracking-widest text-sm">
-            LOADING CPM VEGAS...
+        <div className="flex flex-col items-center gap-3">
+          <Loader2
+            className="w-8 h-8 animate-spin"
+            style={{ color: "oklch(0.65 0.28 340)" }}
+          />
+          <p className="text-sm text-muted-foreground font-bold tracking-wider">
+            LOADING...
           </p>
         </div>
       </div>
@@ -79,6 +86,7 @@ export default function Layout() {
     { to: "/games", label: "Games", icon: LayoutDashboard },
     { to: "/leaderboard", label: "Leaderboard", icon: Trophy },
     { to: "/history", label: "History", icon: History },
+    { to: "/shop", label: "Shop", icon: ShoppingBag },
   ];
 
   return (
@@ -188,7 +196,7 @@ export default function Layout() {
         </nav>
 
         {/* Right */}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2">
           {isStaff && (
             <Link
               to="/staff"
@@ -209,6 +217,33 @@ export default function Layout() {
               </Button>
             </Link>
           )}
+
+          {/* Points balance */}
+          {points !== undefined && (
+            <div
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+              style={{
+                background: "oklch(0.14 0.025 278)",
+                border: "1px solid oklch(0.55 0.25 290 / 0.4)",
+                boxShadow: "0 0 8px oklch(0.55 0.25 290 / 0.12)",
+              }}
+              data-ocid="nav.points.card"
+            >
+              <Star
+                className="w-3.5 h-3.5"
+                style={{ color: "oklch(0.55 0.25 290)" }}
+              />
+              <span
+                className="text-sm font-black"
+                style={{ color: "oklch(0.55 0.25 290)" }}
+              >
+                {points.toString()}
+              </span>
+              <span className="text-xs text-muted-foreground">pts</span>
+            </div>
+          )}
+
+          {/* Credits balance */}
           <div
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg"
             style={{
@@ -223,6 +258,7 @@ export default function Layout() {
             </span>
             <span className="text-xs text-muted-foreground">credits</span>
           </div>
+
           <Button
             size="sm"
             onClick={handleClaimDaily}

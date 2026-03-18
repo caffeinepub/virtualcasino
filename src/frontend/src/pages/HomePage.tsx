@@ -24,6 +24,7 @@ import {
   useGetCallerUserProfile,
   useGetDailyWinners,
   useGetGameHistory,
+  useGetPointsBalance,
   useGetWalletBalance,
 } from "../hooks/useQueries";
 
@@ -786,6 +787,7 @@ function LoggedInHome({
   const { identity } = useInternetIdentity();
   const { data: profile } = useGetCallerUserProfile();
   const { data: balance } = useGetWalletBalance();
+  const { data: points } = useGetPointsBalance();
   const { data: gameHistory, isLoading: historyLoading } = useGetGameHistory(
     identity?.getPrincipal(),
   );
@@ -844,7 +846,7 @@ function LoggedInHome({
 
             {/* Balance card */}
             <motion.div
-              className="inline-flex items-center gap-4 px-8 py-4 rounded-2xl mb-8"
+              className="inline-flex flex-wrap items-center gap-4 px-8 py-4 rounded-2xl mb-8"
               style={{
                 background:
                   "linear-gradient(135deg, oklch(0.13 0.022 278), oklch(0.15 0.03 72))",
@@ -870,6 +872,38 @@ function LoggedInHome({
                   CREDITS
                 </p>
               </div>
+              {points !== undefined && (
+                <>
+                  <div
+                    className="w-px h-10 opacity-30"
+                    style={{ background: "oklch(0.55 0.25 290)" }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Star
+                      className="w-7 h-7"
+                      style={{
+                        color: "oklch(0.55 0.25 290)",
+                        filter:
+                          "drop-shadow(0 0 6px oklch(0.55 0.25 290 / 0.7))",
+                      }}
+                    />
+                    <div className="text-left">
+                      <p
+                        className="text-3xl font-black font-display"
+                        style={{
+                          color: "oklch(0.55 0.25 290)",
+                          textShadow: "0 0 10px oklch(0.55 0.25 290 / 0.6)",
+                        }}
+                      >
+                        {Number(points).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-bold tracking-wider">
+                        POINTS
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
 
             {/* Actions */}
