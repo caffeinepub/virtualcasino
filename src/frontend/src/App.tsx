@@ -5,12 +5,13 @@ import {
   createRootRoute,
   createRoute,
   createRouter,
-  redirect,
 } from "@tanstack/react-router";
 import Layout from "./components/Layout";
+import PublicLayout from "./components/PublicLayout";
 import AuthPage from "./pages/AuthPage";
 import GamePage from "./pages/GamePage";
 import HistoryPage from "./pages/HistoryPage";
+import HomePage from "./pages/HomePage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import LobbyPage from "./pages/LobbyPage";
 import StaffPage from "./pages/StaffPage";
@@ -25,16 +26,24 @@ const authRoute = createRoute({
   component: AuthPage,
 });
 
+// Public layout — no auth redirect
+const publicLayoutRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "public-layout",
+  component: PublicLayout,
+});
+
+const indexRoute = createRoute({
+  getParentRoute: () => publicLayoutRoute,
+  path: "/",
+  component: HomePage,
+});
+
+// Auth-protected layout
 const layoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "layout",
   component: Layout,
-});
-
-const indexRoute = createRoute({
-  getParentRoute: () => layoutRoute,
-  path: "/",
-  component: LobbyPage,
 });
 
 const gamesRoute = createRoute({
@@ -69,8 +78,8 @@ const staffRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   authRoute,
+  publicLayoutRoute.addChildren([indexRoute]),
   layoutRoute.addChildren([
-    indexRoute,
     gamesRoute,
     gameRoute,
     historyRoute,

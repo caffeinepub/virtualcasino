@@ -1,6 +1,11 @@
 import type { Principal } from "@icp-sdk/core/principal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { GameType, UserProfile, UserRole } from "../backend.d";
+import type {
+  GameSettings,
+  GameType,
+  UserProfile,
+  UserRole,
+} from "../backend.d";
 import { useActor } from "./useActor";
 import { useInternetIdentity } from "./useInternetIdentity";
 
@@ -166,6 +171,48 @@ export function useAssignRole() {
     mutationFn: async ({ user, role }: { user: Principal; role: UserRole }) => {
       if (!actor) throw new Error("Not connected");
       return actor.assignCallerUserRole(user, role);
+    },
+  });
+}
+
+export function useGetAllUsers() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery({
+    queryKey: ["allUsers"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getAllUsers();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+  });
+}
+
+export function useGetAllGameSettings() {
+  const { actor, isFetching } = useActor();
+  return useQuery<Array<[string, GameSettings]>>({
+    queryKey: ["allGameSettings"],
+    queryFn: async () => {
+      if (!actor) return [];
+      return (actor as any).getAllGameSettings();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+export function useSetGameSettings() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      gameType,
+      settings,
+    }: { gameType: GameType; settings: GameSettings }) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).setGameSettings(gameType, settings);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["allGameSettings"] });
     },
   });
 }

@@ -3,6 +3,7 @@ import List "mo:core/List";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
+import Float "mo:core/Float";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Order "mo:core/Order";
@@ -25,6 +26,22 @@ actor {
     name : Text;
   };
 
+  public type GameSettings = {
+    minBet : Nat;
+    maxBet : Nat;
+    winMultiplier : Float;
+  };
+
+  public type UserSummary = {
+    principal : Principal;
+    name : Text;
+    balance : Int;
+    role : Text;
+    joinDate : Time.Time;
+    totalGamesPlayed : Nat;
+    totalCreditsWon : Int;
+  };
+
   func compareByWalletBalance(winner1 : DailyWinner, winner2 : DailyWinner) : Order.Order {
     Int.compare(winner2.amount, winner1.amount);
   };
@@ -45,13 +62,6 @@ actor {
     gameResultArray[Int.abs(randomNumber).toNat() % 2];
   };
 
-  func getRandomBalanceChange(bet : Nat, result : GameResult) : Int {
-    switch (result) {
-      case (#win) { bet.toInt() };
-      case (#lose) { -bet.toInt() };
-    };
-  };
-
   type UserGame = {
     user : Principal;
     gameType : GameType;
@@ -66,6 +76,40 @@ actor {
   let dailyWinners = List.empty<DailyWinner>();
   var lastClaimDay = Map.empty<Principal, Time.Time>();
   let userProfiles = Map.empty<Principal, UserProfile>();
+  let userJoinDates = Map.empty<Principal, Time.Time>();
+  let userTotalGamesPlayed = Map.empty<Principal, Nat>();
+  let userTotalCreditsWon = Map.empty<Principal, Int>();
+  let gameSettingsMap = Map.empty<Text, GameSettings>();
+
+  func gameTypeToText(g : GameType) : Text {
+    switch (g) {
+      case (#slots) { "slots" };
+      case (#blackjack) { "blackjack" };
+      case (#roulette) { "roulette" };
+      case (#videoPoker) { "videoPoker" };
+      case (#dice) { "dice" };
+      case (#baccarat) { "baccarat" };
+      case (#keno) { "keno" };
+      case (#scratchCards) { "scratchCards" };
+      case (#craps) { "craps" };
+      case (#paiGowPoker) { "paiGowPoker" };
+      case (#sicBo) { "sicBo" };
+      case (#war) { "war" };
+      case (#caribbeanStud) { "caribbeanStud" };
+      case (#letItRide) { "letItRide" };
+      case (#threeCardPoker) { "threeCardPoker" };
+      case (#casinoHoldem) { "casinoHoldem" };
+      case (#wheelOfFortune) { "wheelOfFortune" };
+      case (#coinPusher) { "coinPusher" };
+      case (#plinko) { "plinko" };
+      case (#crashGame) { "crashGame" };
+      case (#mines) { "mines" };
+      case (#limbo) { "limbo" };
+      case (#hiLo) { "hiLo" };
+      case (#penaltyShootout) { "penaltyShootout" };
+      case (#ballDrop) { "ballDrop" };
+    };
+  };
 
   public shared ({ caller }) func initializeBalance() : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -77,6 +121,9 @@ actor {
       case (null) {};
     };
     userBalances.add(caller, 10);
+    userJoinDates.add(caller, Time.now());
+    userTotalGamesPlayed.add(caller, 0);
+    userTotalCreditsWon.add(caller, 0);
   };
 
   public query ({ caller }) func getWalletBalance() : async Int {
@@ -127,7 +174,7 @@ actor {
       Runtime.trap("Unauthorized: Only users can claim credits");
     };
 
-    let currentDay = Time.now() / 86_400_000_000_000; // Convert to days
+    let currentDay = Time.now() / 86_400_000_000_000;
     switch (lastClaimDay.get(caller)) {
       case (?lastDay) {
         if ((Time.now() / 86_400_000_000_000) == lastDay) {
@@ -145,12 +192,63 @@ actor {
     lastClaimDay.add(caller, currentDay);
   };
 
+  public shared ({ caller }) func setGameSettings(gameType : GameType, settings : GameSettings) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can set game settings");
+    };
+    gameSettingsMap.add(gameTypeToText(gameType), settings);
+  };
+
+  public query func getGameSettings(gameType : GameType) : async ?GameSettings {
+    gameSettingsMap.get(gameTypeToText(gameType));
+  };
+
+  public query func getAllGameSettings() : async [(Text, GameSettings)] {
+    gameSettingsMap.toArray();
+  };
+
+  public query ({ caller }) func getAllUsers() : async [UserSummary] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can view all users");
+    };
+    let entries = userBalances.toArray();
+    entries.map(
+      func((p, bal) : (Principal, Int)) : UserSummary {
+        let name = switch (userProfiles.get(p)) {
+          case (?profile) { profile.name };
+          case (null) { "" };
+        };
+        let joinDate = switch (userJoinDates.get(p)) {
+          case (?d) { d };
+          case (null) { 0 };
+        };
+        let totalGamesPlayed = switch (userTotalGamesPlayed.get(p)) {
+          case (?n) { n };
+          case (null) { 0 };
+        };
+        let totalCreditsWon = switch (userTotalCreditsWon.get(p)) {
+          case (?n) { n };
+          case (null) { 0 };
+        };
+        let role = if (AccessControl.isAdmin(accessControlState, p)) { "admin" } else { "user" };
+        {
+          principal = p;
+          name;
+          balance = bal;
+          role;
+          joinDate;
+          totalGamesPlayed;
+          totalCreditsWon;
+        };
+      },
+    );
+  };
+
   public shared ({ caller }) func playGame(gameType : GameType, bet : Nat) : async UserGame {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can play games");
     };
 
-    // Check balance
     var currentBalance = switch (userBalances.get(caller)) {
       case (?balance) { balance };
       case (null) { 0 };
@@ -159,20 +257,42 @@ actor {
       Runtime.trap("Not enough credits to place bet");
     };
 
-    // Update balance (subtract bet)
+    // Check game settings for min/max bet
+    switch (gameSettingsMap.get(gameTypeToText(gameType))) {
+      case (?settings) {
+        if (bet < settings.minBet) {
+          Runtime.trap("Bet is below minimum allowed");
+        };
+        if (bet > settings.maxBet) {
+          Runtime.trap("Bet exceeds maximum allowed");
+        };
+      };
+      case (null) {};
+    };
+
     currentBalance -= bet;
     userBalances.add(caller, currentBalance);
 
-    // Calculate outcome (win/loss) and balance change
     let result = getRandomGameResult();
-    let balanceChange = getRandomBalanceChange(bet, result);
+    var balanceChange : Int = 0;
+    switch (result) {
+      case (#win) {
+        let multiplier = switch (gameSettingsMap.get(gameTypeToText(gameType))) {
+          case (?settings) { settings.winMultiplier };
+          case (null) { 1.0 };
+        };
+        let winAmount = (bet.toFloat() * multiplier).toInt();
+        balanceChange := winAmount;
+      };
+      case (#lose) {
+        balanceChange := -bet.toInt();
+      };
+    };
+
     currentBalance += balanceChange;
     userBalances.add(caller, currentBalance);
-
-    // Update casino balance
     casinoWallet -= balanceChange;
 
-    // Record game result
     let newGame : UserGame = {
       user = caller;
       gameType;
@@ -189,9 +309,18 @@ actor {
     userGameList.add(newGame);
     gameHistory.add(caller, userGameList);
 
-    // Track daily winner if won
+    // Update stats
+    let prevGames = switch (userTotalGamesPlayed.get(caller)) {
+      case (?n) { n }; case (null) { 0 };
+    };
+    userTotalGamesPlayed.add(caller, prevGames + 1);
+
     if (result == #win and balanceChange > 0) {
       dailyWinners.add({ user = caller; amount = balanceChange });
+      let prevWon = switch (userTotalCreditsWon.get(caller)) {
+        case (?n) { n }; case (null) { 0 };
+      };
+      userTotalCreditsWon.add(caller, prevWon + balanceChange);
     };
 
     newGame;
@@ -209,12 +338,7 @@ actor {
 
   public query ({ caller }) func getDailyWinners() : async [DailyWinner] {
     let sortedList = dailyWinners.toArray().sort(compareByWalletBalance);
-
-    // Shuffle (randomize) the entries
     let shuffled = sortedList.sort(compareByRandom);
-
-    // Take top 10
     shuffled.sliceToArray(0, Int.abs(Nat.min(10, shuffled.size())));
   };
 };
-

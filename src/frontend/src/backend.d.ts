@@ -23,6 +23,20 @@ export interface DailyWinner {
 export interface UserProfile {
     name: string;
 }
+export interface GameSettings {
+    minBet: bigint;
+    maxBet: bigint;
+    winMultiplier: number;
+}
+export interface UserSummary {
+    principal: Principal;
+    name: string;
+    balance: bigint;
+    role: string;
+    joinDate: bigint;
+    totalGamesPlayed: bigint;
+    totalCreditsWon: bigint;
+}
 export enum GameResult {
     win = "win",
     lose = "lose"
@@ -73,4 +87,8 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     playGame(gameType: GameType, bet: bigint): Promise<UserGame>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setGameSettings(gameType: GameType, settings: GameSettings): Promise<void>;
+    getGameSettings(gameType: GameType): Promise<GameSettings | null>;
+    getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
+    getAllUsers(): Promise<Array<UserSummary>>;
 }

@@ -1,37 +1,31 @@
 # Cpm Vegas And Arcade
 
 ## Current State
-Full-stack casino + arcade app with 25 games, user accounts, daily credits, game history, leaderboard, and staff panel. Current theme is a dark casino/purple/gold aesthetic with Bricolage Grotesque + Figtree fonts. Site name in header shows "ONYX CASINO".
+Full-stack casino/arcade gaming platform with 25 games, user accounts, virtual credits, daily bonuses, leaderboard, and a basic staff panel (add credits, assign roles). The nav has a Staff Panel link visible only to staff.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Neon Vegas + modern arcade visual identity throughout
-- Scanline/glow effects, neon text glows on headings
-- Bright neon color palette: hot pink, electric purple, cyan, gold, on deep dark backgrounds
-- Animated ticker / marquee on home page showing daily winners cycling through
-- "Most Popular Today" games section (random daily selection, shown prominently)
-- Daily winners section on home page with random order and refresh each visit
-- Pixel-style or bold block font for headings to reinforce arcade feel
-- Neon border glow effects on game cards, buttons, nav
-- Retro scoreboard / leaderboard style with neon colors
+- Backend: `GameSettings` type with minBet, maxBet, and winMultiplier per game
+- Backend: `setGameSettings(gameType, settings)` - admin only, stores settings per game
+- Backend: `getGameSettings(gameType)` - public query returning settings for a game
+- Backend: `getAllGameSettings()` - returns all game settings as array
+- Backend: `UserSummary` type with principal, name, balance, role, joinDate, totalGamesPlayed, totalCreditsWon
+- Backend: `getAllUsers()` - admin only, returns array of UserSummary for every registered user
+- Frontend: Staff button in top nav (both Layout.tsx and PublicLayout.tsx) visible only to staff, styled as neon arcade button
+- Frontend: "Game Controls" tab in StaffPage - table/list of all 25 games with editable minBet, maxBet, winMultiplier fields and save per row
+- Frontend: "User Directory" tab in StaffPage - full table of all users with all data columns
 
 ### Modify
-- Site name: "VIRTUAL CASINO" -> "CPM VEGAS AND ARCADE" everywhere (header logo, hero, page titles, footer)
-- index.css: full color token redesign -- neon pink primary, electric purple/cyan accents, deep dark black backgrounds
-- Layout.tsx: header restyled with neon glows, logo updated, nav links with neon hover effects
-- LobbyPage.tsx: hero banner updated to neon arcade Vegas style, "Featured Today" -> "Most Popular Today" with more visual punch, daily winners shown as animated ticker/cards
-- LeaderboardPage.tsx: scoreboard style with neon rank badges
-- GamePage, HistoryPage, AuthPage, StaffPage: apply neon arcade theming consistently
+- StaffPage: Add tab navigation ("Overview", "Game Controls", "User Directory")
+- Backend: `playGame` should apply winMultiplier when calculating balance change on win
+- Backend: track joinDate (first time initializeBalance is called) and store per user
 
 ### Remove
-- Purple/muted existing color palette replaced entirely
-- "ONYX CASINO" branding removed
+- Nothing removed
 
 ## Implementation Plan
-1. Redesign index.css with neon Vegas/arcade OKLCH color tokens (hot pink, electric purple, cyan, deep black)
-2. Update Layout.tsx with new branding "CPM VEGAS AND ARCADE" and neon-styled header/footer
-3. Redesign LobbyPage.tsx: arcade hero banner, "Most Popular Today" section, animated daily winners ticker
-4. Redesign LeaderboardPage.tsx: arcade scoreboard style
-5. Update AuthPage, GamePage, HistoryPage, StaffPage to match new theme
-6. Add CSS animations: neon pulse glow, scanline overlay, marquee ticker
+1. Generate updated Motoko backend with GameSettings, getAllUsers, setGameSettings, getGameSettings, getAllGameSettings, joinDate tracking, winMultiplier applied in playGame
+2. Update frontend hooks for new backend functions
+3. Update Layout.tsx and PublicLayout.tsx to show Staff button in top nav for staff users
+4. Rebuild StaffPage with tabs: existing controls + Game Controls + User Directory

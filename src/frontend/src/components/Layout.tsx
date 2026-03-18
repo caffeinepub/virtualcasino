@@ -9,8 +9,8 @@ import {
   LayoutDashboard,
   Loader2,
   LogOut,
+  ShieldCheck,
   Trophy,
-  Users,
   Zap,
 } from "lucide-react";
 import { useEffect } from "react";
@@ -165,22 +165,50 @@ export default function Layout() {
             </Link>
           ))}
           {isStaff && (
-            <Link
-              to="/staff"
-              className={`px-4 py-2 rounded-md text-sm font-bold tracking-wide transition-all ${
-                currentPath === "/staff"
-                  ? "neon-pink"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              data-ocid="nav.staff.link"
-            >
-              Staff Panel
+            <Link to="/staff" data-ocid="nav.staff.link">
+              <Button
+                size="sm"
+                className="ml-2 font-black tracking-widest text-xs px-4 border-none"
+                style={{
+                  background:
+                    currentPath === "/staff"
+                      ? "linear-gradient(135deg, oklch(0.72 0.30 340), oklch(0.60 0.27 290))"
+                      : "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+                  boxShadow:
+                    "0 0 16px oklch(0.65 0.28 340 / 0.6), 0 0 32px oklch(0.65 0.28 340 / 0.3)",
+                  color: "#fff",
+                  animation: "neon-pulse 2s ease-in-out infinite",
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                STAFF PANEL
+              </Button>
             </Link>
           )}
         </nav>
 
         {/* Right */}
         <div className="ml-auto flex items-center gap-3">
+          {isStaff && (
+            <Link
+              to="/staff"
+              className="md:hidden"
+              data-ocid="nav.staff.mobile.link"
+            >
+              <Button
+                size="sm"
+                className="font-black text-xs px-3 border-none"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+                  boxShadow: "0 0 12px oklch(0.65 0.28 340 / 0.5)",
+                  color: "#fff",
+                }}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </Button>
+            </Link>
+          )}
           <div
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg"
             style={{
@@ -230,47 +258,6 @@ export default function Layout() {
 
       {/* Body */}
       <div className="flex flex-1 pt-16">
-        {isStaff && (
-          <aside
-            className="hidden lg:flex flex-col w-56 shrink-0 pt-6 pb-4 px-3"
-            style={{
-              background: "oklch(0.10 0.015 282)",
-              borderRight: "1px solid oklch(0.65 0.28 340 / 0.3)",
-            }}
-          >
-            <p className="text-xs font-black text-muted-foreground tracking-widest px-3 mb-2">
-              ACCOUNT
-            </p>
-            <nav className="flex flex-col gap-1">
-              <Link
-                to="/"
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                data-ocid="sidebar.dashboard.link"
-              >
-                <Home className="w-4 h-4" /> Dashboard
-              </Link>
-            </nav>
-            <p className="text-xs font-black text-muted-foreground tracking-widest px-3 mt-6 mb-2">
-              ADMIN
-            </p>
-            <nav className="flex flex-col gap-1">
-              <Link
-                to="/staff"
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                data-ocid="sidebar.staff.link"
-              >
-                <Users className="w-4 h-4" /> Manage Users
-              </Link>
-              <Link
-                to="/staff"
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                data-ocid="sidebar.staffpanel.link"
-              >
-                <LayoutDashboard className="w-4 h-4" /> Staff Panel
-              </Link>
-            </nav>
-          </aside>
-        )}
         <main className="flex-1 min-w-0">
           <Outlet />
         </main>

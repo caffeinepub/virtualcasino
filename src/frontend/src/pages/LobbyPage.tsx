@@ -1,9 +1,10 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "@tanstack/react-router";
-import { Flame, Loader2, Play, Trophy, Zap } from "lucide-react";
+import { Flame, Loader2, Trophy, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { GameType } from "../backend.d";
+import FlipGameCard from "../components/FlipGameCard";
 import ProfileSetup from "../components/ProfileSetup";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
@@ -220,90 +221,6 @@ const SAMPLE_WINNERS = [
   { user: "highroll", amount: 175, game: "Baccarat" },
   { user: "spinqueen", amount: 90, game: "Wheel of Fortune" },
 ];
-
-function GameCard({
-  game,
-  index,
-  featured = false,
-}: { game: (typeof ALL_GAMES)[0]; index: number; featured?: boolean }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      data-ocid={`games.item.${index + 1}`}
-    >
-      <Link to="/game/$gameType" params={{ gameType: game.id }}>
-        <div
-          className="group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300"
-          style={{
-            background: "oklch(0.12 0.015 280)",
-            border: `1px solid ${game.color}40`,
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLDivElement).style.borderColor =
-              `${game.color}cc`;
-            (e.currentTarget as HTMLDivElement).style.boxShadow =
-              `0 0 24px ${game.color}40, 0 0 48px ${game.color}20`;
-            (e.currentTarget as HTMLDivElement).style.transform =
-              "translateY(-3px)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLDivElement).style.borderColor =
-              `${game.color}40`;
-            (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
-            (e.currentTarget as HTMLDivElement).style.transform =
-              "translateY(0)";
-          }}
-        >
-          {featured && (
-            <div
-              className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full text-xs font-black tracking-wider"
-              style={{
-                background:
-                  "linear-gradient(90deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
-                color: "#fff",
-                boxShadow: "0 0 8px oklch(0.65 0.28 340 / 0.5)",
-              }}
-            >
-              🔥 HOT
-            </div>
-          )}
-          <div
-            className={`flex items-center justify-center relative ${featured ? "h-36" : "h-28"}`}
-            style={{
-              background: `radial-gradient(ellipse at center, ${game.color}22, oklch(0.10 0.012 280))`,
-            }}
-          >
-            <span
-              className={`filter drop-shadow-lg ${featured ? "text-5xl" : "text-4xl"}`}
-            >
-              {game.emoji}
-            </span>
-            <div
-              className="absolute bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ background: game.color }}
-            >
-              <Play className="w-3 h-3" style={{ color: "#fff" }} />
-            </div>
-          </div>
-          <div
-            className="px-3 py-2"
-            style={{
-              borderTop: `1px solid ${game.color}30`,
-              background: `${game.color}10`,
-            }}
-          >
-            <p className="font-black text-xs tracking-wider text-foreground">
-              {game.label.toUpperCase()}
-            </p>
-            <p className="text-xs text-muted-foreground">{game.description}</p>
-          </div>
-        </div>
-      </Link>
-    </motion.div>
-  );
-}
 
 export default function LobbyPage() {
   const { identity } = useInternetIdentity();
@@ -523,7 +440,17 @@ export default function LobbyPage() {
               data-ocid="featured.list"
             >
               {FEATURED_GAMES.map((game, i) => (
-                <GameCard key={game.id} game={game} index={i} featured />
+                <FlipGameCard
+                  key={game.id}
+                  id={game.id}
+                  label={game.label}
+                  description={game.description}
+                  emoji={game.emoji}
+                  color={game.color}
+                  index={i}
+                  featured
+                  ocid={`featured.item.${i + 1}`}
+                />
               ))}
             </div>
           </section>
@@ -593,7 +520,16 @@ export default function LobbyPage() {
               data-ocid="games.list"
             >
               {displayedGames.map((game, i) => (
-                <GameCard key={game.id} game={game} index={i} />
+                <FlipGameCard
+                  key={game.id}
+                  id={game.id}
+                  label={game.label}
+                  description={game.description}
+                  emoji={game.emoji}
+                  color={game.color}
+                  index={i}
+                  ocid={`games.item.${i + 1}`}
+                />
               ))}
             </div>
           </section>
