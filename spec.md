@@ -1,26 +1,37 @@
-# VirtualCasino
+# Cpm Vegas And Arcade
 
 ## Current State
-The app has 6 games (slots, blackjack, roulette, videoPoker, dice, baccarat) all on one page in the lobby. Backend GameType enum has 6 variants. Frontend LobbyPage shows all games in a flat grid.
+Full-stack casino + arcade app with 25 games, user accounts, daily credits, game history, leaderboard, and staff panel. Current theme is a dark casino/purple/gold aesthetic with Bricolage Grotesque + Figtree fonts. Site name in header shows "ONYX CASINO".
 
 ## Requested Changes (Diff)
 
 ### Add
-- 11 new casino games: keno, scratchCards, craps, paiGowPoker, sicBo, war, caribbeanStud, letItRide, threeCardPoker, casinoHoldem, wheelOfFortune
-- 8 new arcade games: coinPusher, plinko, crashGame, mines, limbo, hiLo, penaltyShootout, ballDrop
-- Game categories: "Casino Games" and "Arcade Games" tabs or sections in the lobby
-- Daily featured/popular games section on the home screen (random selection per day, highlight 4-6 games)
+- Neon Vegas + modern arcade visual identity throughout
+- Scanline/glow effects, neon text glows on headings
+- Bright neon color palette: hot pink, electric purple, cyan, gold, on deep dark backgrounds
+- Animated ticker / marquee on home page showing daily winners cycling through
+- "Most Popular Today" games section (random daily selection, shown prominently)
+- Daily winners section on home page with random order and refresh each visit
+- Pixel-style or bold block font for headings to reinforce arcade feel
+- Neon border glow effects on game cards, buttons, nav
+- Retro scoreboard / leaderboard style with neon colors
 
 ### Modify
-- Backend GameType enum: add all 19 new game type variants
-- Frontend LobbyPage: add category tabs (Casino / Arcade), add featured games section with daily rotation
-- Frontend GamePage GAME_INFO: add entries for all new game types
+- Site name: "VIRTUAL CASINO" -> "CPM VEGAS AND ARCADE" everywhere (header logo, hero, page titles, footer)
+- index.css: full color token redesign -- neon pink primary, electric purple/cyan accents, deep dark black backgrounds
+- Layout.tsx: header restyled with neon glows, logo updated, nav links with neon hover effects
+- LobbyPage.tsx: hero banner updated to neon arcade Vegas style, "Featured Today" -> "Most Popular Today" with more visual punch, daily winners shown as animated ticker/cards
+- LeaderboardPage.tsx: scoreboard style with neon rank badges
+- GamePage, HistoryPage, AuthPage, StaffPage: apply neon arcade theming consistently
 
 ### Remove
-- Nothing removed
+- Purple/muted existing color palette replaced entirely
+- "ONYX CASINO" branding removed
 
 ## Implementation Plan
-1. Regenerate Motoko backend with expanded GameType (25 total game types)
-2. Update LobbyPage with: featured daily games section, category tabs (All / Casino / Arcade), full games grid
-3. Update GamePage GAME_INFO with descriptions for all new games
-4. Validate and deploy
+1. Redesign index.css with neon Vegas/arcade OKLCH color tokens (hot pink, electric purple, cyan, deep black)
+2. Update Layout.tsx with new branding "CPM VEGAS AND ARCADE" and neon-styled header/footer
+3. Redesign LobbyPage.tsx: arcade hero banner, "Most Popular Today" section, animated daily winners ticker
+4. Redesign LeaderboardPage.tsx: arcade scoreboard style
+5. Update AuthPage, GamePage, HistoryPage, StaffPage to match new theme
+6. Add CSS animations: neon pulse glow, scanline overlay, marquee ticker

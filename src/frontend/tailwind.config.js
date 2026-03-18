@@ -10,14 +10,12 @@ export default {
     container: {
       center: true,
       padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
+      screens: { "2xl": "1400px" },
     },
     extend: {
       fontFamily: {
-        display: ['Bricolage Grotesque', 'sans-serif'],
-        body: ['Figtree', 'sans-serif'],
+        display: ["Bricolage Grotesque", "sans-serif"],
+        body: ["Figtree", "sans-serif"],
       },
       colors: {
         border: "oklch(var(--border))",
@@ -75,6 +73,12 @@ export default {
           light: "oklch(var(--gold-light))",
           dim: "oklch(var(--gold-dim))",
         },
+        neon: {
+          pink: "oklch(var(--neon-pink))",
+          cyan: "oklch(var(--neon-cyan))",
+          purple: "oklch(var(--neon-purple))",
+          green: "oklch(var(--neon-green))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -83,7 +87,10 @@ export default {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgba(0,0,0,0.05)",
-        gold: "0 0 20px oklch(0.70 0.13 72 / 0.3)",
+        gold: "0 0 20px oklch(0.78 0.18 72 / 0.35)",
+        pink: "0 0 20px oklch(0.65 0.28 340 / 0.4)",
+        cyan: "0 0 20px oklch(0.70 0.20 190 / 0.4)",
+        purple: "0 0 20px oklch(0.55 0.25 290 / 0.4)",
       },
       keyframes: {
         "accordion-down": {
@@ -94,9 +101,17 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% center" },
-          "100%": { backgroundPosition: "200% center" },
+        "neon-pulse": {
+          "0%, 100%": { filter: "brightness(1)" },
+          "50%": { filter: "brightness(1.3)" },
+        },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
+        flicker: {
+          "0%, 19.9%, 22%, 62.9%, 64%, 64.9%, 70%, 100%": { opacity: "1" },
+          "20%, 21.9%, 63%, 63.9%, 65%, 69.9%": { opacity: "0.6" },
         },
         "float": {
           "0%, 100%": { transform: "translateY(0px)" },
@@ -106,7 +121,9 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        shimmer: "shimmer 3s linear infinite",
+        "neon-pulse": "neon-pulse 2s ease-in-out infinite",
+        marquee: "marquee 25s linear infinite",
+        flicker: "flicker 5s linear infinite",
         float: "float 3s ease-in-out infinite",
       },
     },

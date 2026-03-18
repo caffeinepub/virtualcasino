@@ -62,7 +62,10 @@ export default function StaffPage() {
         className="flex justify-center py-20"
         data-ocid="staff.loading_state"
       >
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        <Loader2
+          className="w-8 h-8 animate-spin"
+          style={{ color: "oklch(0.65 0.28 340)" }}
+        />
       </div>
     );
   }
@@ -74,7 +77,7 @@ export default function StaffPage() {
         data-ocid="staff.error_state"
       >
         <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
-        <h2 className="font-display text-2xl font-bold mb-2">Access Denied</h2>
+        <h2 className="font-display font-black text-2xl mb-2">ACCESS DENIED</h2>
         <p className="text-muted-foreground text-center">
           You don't have permission to access the Staff Panel.
         </p>
@@ -82,25 +85,54 @@ export default function StaffPage() {
     );
   }
 
+  const panelCard = {
+    background: "oklch(0.11 0.015 280)",
+    border: "1px solid oklch(0.22 0.03 275)",
+  };
+
   return (
     <div className="p-4 max-w-3xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center gap-2 mb-6">
-          <Users className="w-6 h-6 text-gold" />
-          <h1 className="font-display text-2xl font-bold tracking-wider">
-            STAFF PANEL
-          </h1>
+        <div
+          className="flex items-center gap-3 mb-6 p-4 rounded-xl"
+          style={{
+            background: "oklch(0.11 0.015 280)",
+            border: "1px solid oklch(0.65 0.28 340 / 0.4)",
+            boxShadow: "0 0 20px oklch(0.65 0.28 340 / 0.1)",
+          }}
+        >
+          <Users
+            className="w-6 h-6"
+            style={{
+              color: "oklch(0.65 0.28 340)",
+              filter: "drop-shadow(0 0 6px oklch(0.65 0.28 340 / 0.7))",
+            }}
+          />
+          <div>
+            <h1
+              className="font-display font-black text-2xl tracking-widest"
+              style={{
+                color: "oklch(0.65 0.28 340)",
+                textShadow: "0 0 10px oklch(0.65 0.28 340 / 0.5)",
+              }}
+            >
+              STAFF PANEL
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Admin management console
+            </p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Add Credits */}
-          <div className="card-dark rounded-xl p-6">
+          <div className="rounded-xl p-6" style={panelCard}>
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="w-5 h-5 text-gold" />
-              <h2 className="font-display font-bold tracking-wider">
+              <h2 className="font-display font-black tracking-widest text-gold">
                 ADD CREDITS
               </h2>
             </div>
@@ -141,7 +173,13 @@ export default function StaffPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-gold text-primary-foreground font-bold hover:opacity-90"
+                className="w-full font-black border-none"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.78 0.18 72), oklch(0.65 0.22 55))",
+                  boxShadow: "0 0 12px oklch(0.78 0.18 72 / 0.3)",
+                  color: "#fff",
+                }}
                 disabled={addingCredits || !creditPrincipal || !creditAmount}
                 data-ocid="staff.credit.submit_button"
               >
@@ -154,10 +192,16 @@ export default function StaffPage() {
           </div>
 
           {/* Assign Role */}
-          <div className="card-dark rounded-xl p-6">
+          <div className="rounded-xl p-6" style={panelCard}>
             <div className="flex items-center gap-2 mb-4">
-              <ShieldAlert className="w-5 h-5 text-gold" />
-              <h2 className="font-display font-bold tracking-wider">
+              <ShieldAlert
+                className="w-5 h-5"
+                style={{ color: "oklch(0.65 0.28 340)" }}
+              />
+              <h2
+                className="font-display font-black tracking-widest"
+                style={{ color: "oklch(0.65 0.28 340)" }}
+              >
                 ASSIGN ROLE
               </h2>
             </div>
@@ -198,8 +242,8 @@ export default function StaffPage() {
                   </SelectTrigger>
                   <SelectContent
                     style={{
-                      background: "oklch(0.16 0.018 228)",
-                      borderColor: "oklch(0.22 0.025 225)",
+                      background: "oklch(0.14 0.02 278)",
+                      borderColor: "oklch(0.22 0.03 275)",
                     }}
                   >
                     <SelectItem value={UserRole.user}>User</SelectItem>
@@ -210,7 +254,13 @@ export default function StaffPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-gold text-primary-foreground font-bold hover:opacity-90"
+                className="w-full font-black border-none"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+                  boxShadow: "0 0 12px oklch(0.65 0.28 340 / 0.3)",
+                  color: "#fff",
+                }}
                 disabled={assigningRole || !rolePrincipal}
                 data-ocid="staff.role.submit_button"
               >

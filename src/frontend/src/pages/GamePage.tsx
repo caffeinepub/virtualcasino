@@ -11,133 +11,160 @@ import { useGetWalletBalance, usePlayGame } from "../hooks/useQueries";
 
 const GAME_INFO: Record<
   string,
-  { label: string; emoji: string; description: string; rules: string }
+  {
+    label: string;
+    emoji: string;
+    description: string;
+    rules: string;
+    color: string;
+  }
 > = {
   [GameType.slots]: {
     label: "Slots",
     emoji: "🎰",
     description: "Spin the reels and match symbols!",
     rules: "Match 3 symbols to win. Higher bets, bigger wins!",
+    color: "oklch(0.65 0.28 340)",
   },
   [GameType.blackjack]: {
     label: "Blackjack",
     emoji: "🃏",
     description: "Beat the dealer without going over 21!",
     rules: "Get closer to 21 than the dealer. Ace = 1 or 11.",
+    color: "oklch(0.70 0.20 190)",
   },
   [GameType.roulette]: {
     label: "Roulette",
     emoji: "🎡",
     description: "Spin the wheel and place your bets!",
     rules: "The ball lands on a number. Bet wisely!",
+    color: "oklch(0.60 0.24 20)",
   },
   [GameType.videoPoker]: {
     label: "Video Poker",
     emoji: "♠️",
     description: "Build the best poker hand!",
     rules: "Royal Flush pays 250x. Get the best 5-card hand.",
+    color: "oklch(0.78 0.18 72)",
   },
   [GameType.dice]: {
     label: "Dice",
     emoji: "🎲",
     description: "Roll the dice and beat the house!",
     rules: "Roll higher than the dealer. Snake eyes loses!",
+    color: "oklch(0.70 0.20 190)",
   },
   [GameType.baccarat]: {
     label: "Baccarat",
     emoji: "💎",
     description: "Bet on Player or Banker!",
     rules: "Closest to 9 wins. 8 or 9 = Natural win!",
+    color: "oklch(0.55 0.25 290)",
   },
   [GameType.keno]: {
     label: "Keno",
     emoji: "🔢",
     description: "Pick your lucky numbers!",
     rules: "Choose up to 10 numbers. More matches = bigger wins!",
+    color: "oklch(0.62 0.22 240)",
   },
   [GameType.scratchCards]: {
     label: "Scratch Cards",
     emoji: "🎫",
     description: "Instant win potential!",
     rules: "Scratch to reveal your prize. Match 3 symbols to win!",
+    color: "oklch(0.68 0.22 150)",
   },
   [GameType.craps]: {
     label: "Craps",
     emoji: "🎲",
     description: "Roll the bones!",
     rules: "Bet on the dice outcome. Pass line bets are most popular.",
+    color: "oklch(0.60 0.24 25)",
   },
   [GameType.paiGowPoker]: {
     label: "Pai Gow Poker",
     emoji: "🀄",
     description: "Ancient Chinese strategy!",
     rules: "Split 7 cards into two hands. Beat the banker's hands to win.",
+    color: "oklch(0.65 0.22 55)",
   },
   [GameType.sicBo]: {
     label: "Sic Bo",
     emoji: "🎰",
     description: "Three dice action!",
     rules: "Predict the outcome of 3 dice. Big/Small bets are easiest.",
+    color: "oklch(0.65 0.28 340)",
   },
   [GameType.war]: {
     label: "War",
     emoji: "🃏",
     description: "Simple card battle!",
     rules: "Higher card wins. Tie? Go to War for double or nothing!",
+    color: "oklch(0.60 0.24 20)",
   },
   [GameType.caribbeanStud]: {
     label: "Caribbean Stud",
     emoji: "♣️",
     description: "Caribbean vibes!",
     rules: "Beat the dealer's 5-card poker hand to win.",
+    color: "oklch(0.70 0.20 190)",
   },
   [GameType.letItRide]: {
     label: "Let It Ride",
     emoji: "🌊",
     description: "Ride the wave!",
     rules: "Let good hands ride for bigger payouts. Pull back bad ones.",
+    color: "oklch(0.62 0.22 200)",
   },
   [GameType.threeCardPoker]: {
     label: "Three Card Poker",
     emoji: "🃏",
     description: "Three card magic!",
     rules: "Straight flush, three of a kind, or straight pays big.",
+    color: "oklch(0.55 0.25 290)",
   },
   [GameType.casinoHoldem]: {
     label: "Casino Hold'em",
     emoji: "♠️",
     description: "Texas style poker!",
     rules: "Beat the dealer with the best 5-card hand using community cards.",
+    color: "oklch(0.68 0.22 150)",
   },
   [GameType.wheelOfFortune]: {
     label: "Wheel of Fortune",
     emoji: "🎡",
     description: "Spin to win big!",
     rules: "Bet on which symbol the wheel stops on. 40x payout possible!",
+    color: "oklch(0.78 0.18 72)",
   },
   [GameType.coinPusher]: {
     label: "Coin Pusher",
     emoji: "🪙",
     description: "Push to win!",
     rules: "Drop coins to push more coins off the edge and collect them.",
+    color: "oklch(0.78 0.18 72)",
   },
   [GameType.plinko]: {
     label: "Plinko",
     emoji: "📍",
     description: "Drop the ball!",
     rules: "Drop the ball and watch it bounce for multiplied winnings.",
+    color: "oklch(0.65 0.28 340)",
   },
   [GameType.crashGame]: {
     label: "Crash Game",
     emoji: "🚀",
     description: "Cash out in time!",
     rules: "The multiplier grows. Cash out before it crashes to win!",
+    color: "oklch(0.60 0.24 20)",
   },
   [GameType.mines]: {
     label: "Mines",
     emoji: "💣",
     description: "Avoid the mines!",
     rules: "Reveal safe tiles to multiply your bet. Hit a mine and lose all.",
+    color: "oklch(0.68 0.22 150)",
   },
   [GameType.limbo]: {
     label: "Limbo",
@@ -145,6 +172,7 @@ const GAME_INFO: Record<
     description: "How low can you go?",
     rules:
       "Set a target multiplier. The lower the target, the higher the chance to win.",
+    color: "oklch(0.55 0.25 290)",
   },
   [GameType.hiLo]: {
     label: "Hi-Lo",
@@ -152,18 +180,21 @@ const GAME_INFO: Record<
     description: "Higher or lower?",
     rules:
       "Guess if the next card will be higher or lower. Chain correct guesses!",
+    color: "oklch(0.70 0.20 190)",
   },
   [GameType.penaltyShootout]: {
     label: "Penalty Shootout",
     emoji: "⚽",
     description: "Score to win!",
     rules: "Pick your corner and shoot. Beat the goalkeeper to win!",
+    color: "oklch(0.68 0.22 150)",
   },
   [GameType.ballDrop]: {
     label: "Ball Drop",
     emoji: "🎱",
     description: "Drop & win!",
     rules: "Drop the ball through pegs to land in a prize slot.",
+    color: "oklch(0.55 0.25 290)",
   },
 };
 
@@ -187,7 +218,9 @@ export default function GamePage() {
     emoji: "🎮",
     description: "",
     rules: "",
+    color: "oklch(0.65 0.28 340)",
   };
+  const { color } = gameInfo;
 
   const handlePlay = async () => {
     const betAmount = Number.parseInt(bet, 10);
@@ -199,7 +232,6 @@ export default function GamePage() {
       toast.error("Insufficient credits");
       return;
     }
-
     try {
       setIsAnimating(true);
       const result = await playGame({
@@ -237,41 +269,61 @@ export default function GamePage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card-dark rounded-2xl overflow-hidden mb-6"
+        className="rounded-2xl overflow-hidden mb-6"
+        style={{
+          background: "oklch(0.11 0.015 280)",
+          border: `1px solid ${color}60`,
+          boxShadow: `0 0 30px ${color}20`,
+        }}
       >
         <div
-          className="h-40 flex flex-col items-center justify-center relative"
+          className="h-44 flex flex-col items-center justify-center relative overflow-hidden"
           style={{
-            background:
-              "linear-gradient(135deg, oklch(0.18 0.08 300), oklch(0.24 0.12 295))",
+            background: `radial-gradient(ellipse at center, ${color}25, oklch(0.09 0.012 280))`,
           }}
         >
+          {/* Neon grid */}
+          <div
+            className="absolute inset-0 opacity-20"
+            style={{
+              backgroundImage: `linear-gradient(${color}30 1px, transparent 1px), linear-gradient(90deg, ${color}30 1px, transparent 1px)`,
+              backgroundSize: "30px 30px",
+            }}
+          />
           <motion.div
             animate={
               isAnimating
-                ? { rotate: [0, 10, -10, 10, 0], scale: [1, 1.2, 1] }
+                ? { rotate: [0, 15, -15, 10, 0], scale: [1, 1.3, 1] }
                 : {}
             }
             transition={{ duration: 0.5 }}
-            className="text-6xl mb-2"
+            className="text-7xl mb-2 relative z-10"
           >
             {gameInfo.emoji}
           </motion.div>
-          <h1 className="font-display text-2xl font-bold text-gold-gradient">
+          <h1
+            className="font-display font-black text-2xl tracking-widest relative z-10"
+            style={{ color, textShadow: `0 0 20px ${color}` }}
+          >
             {gameInfo.label.toUpperCase()}
           </h1>
-          <p className="text-sm text-foreground/70 mt-1">
+          <p className="text-sm text-foreground/60 mt-1 relative z-10">
             {gameInfo.description}
           </p>
         </div>
         <div
           className="px-6 py-3 flex items-center justify-between"
-          style={{ background: "oklch(0.13 0.015 232)" }}
+          style={{
+            background: "oklch(0.13 0.015 282)",
+            borderTop: `1px solid ${color}30`,
+          }}
         >
-          <p className="text-xs text-muted-foreground">{gameInfo.rules}</p>
+          <p className="text-xs text-muted-foreground flex-1">
+            {gameInfo.rules}
+          </p>
           <div className="flex items-center gap-1.5 shrink-0 ml-4">
             <Coins className="w-4 h-4 text-gold" />
-            <span className="text-gold font-bold text-sm">
+            <span className="text-gold font-black text-sm">
               {balance?.toString() ?? "—"}
             </span>
           </div>
@@ -285,16 +337,17 @@ export default function GamePage() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className={`rounded-xl p-4 mb-6 flex items-center gap-4 ${
-              lastResult.result === GameResult.win
-                ? "border border-gold/50"
-                : "border border-destructive/50"
-            }`}
+            className="rounded-xl p-4 mb-6 flex items-center gap-4"
             style={{
               background:
                 lastResult.result === GameResult.win
-                  ? "oklch(0.70 0.13 72 / 0.15)"
-                  : "oklch(0.577 0.245 27 / 0.15)",
+                  ? "oklch(0.78 0.18 72 / 0.1)"
+                  : "oklch(0.577 0.245 27 / 0.1)",
+              border: `1px solid ${lastResult.result === GameResult.win ? "oklch(0.78 0.18 72 / 0.5)" : "oklch(0.577 0.245 27 / 0.5)"}`,
+              boxShadow:
+                lastResult.result === GameResult.win
+                  ? "0 0 20px oklch(0.78 0.18 72 / 0.2)"
+                  : "0 0 20px oklch(0.577 0.245 27 / 0.2)",
             }}
             data-ocid="game.result_state"
           >
@@ -305,13 +358,11 @@ export default function GamePage() {
             )}
             <div>
               <p
-                className={`font-bold text-lg ${
-                  lastResult.result === GameResult.win
-                    ? "text-gold"
-                    : "text-destructive"
-                }`}
+                className={`font-black text-lg ${lastResult.result === GameResult.win ? "text-gold" : "text-destructive"}`}
               >
-                {lastResult.result === GameResult.win ? "YOU WIN!" : "YOU LOSE"}
+                {lastResult.result === GameResult.win
+                  ? "🎉 YOU WIN!"
+                  : "💸 YOU LOSE"}
               </p>
               <p className="text-sm text-muted-foreground">
                 {lastResult.result === GameResult.win
@@ -323,8 +374,17 @@ export default function GamePage() {
         )}
       </AnimatePresence>
 
-      <div className="card-dark rounded-2xl p-6">
-        <h3 className="font-display font-bold tracking-wider mb-4">
+      <div
+        className="rounded-2xl p-6"
+        style={{
+          background: "oklch(0.11 0.015 280)",
+          border: "1px solid oklch(0.22 0.03 275)",
+        }}
+      >
+        <h3
+          className="font-display font-black tracking-widest mb-4"
+          style={{ color }}
+        >
           PLACE YOUR BET
         </h3>
 
@@ -334,15 +394,19 @@ export default function GamePage() {
               key={q}
               type="button"
               onClick={() => setBet(q.toString())}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                bet === q.toString()
-                  ? "text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+              className="px-4 py-2 rounded-lg text-xs font-black transition-all"
               style={
                 bet === q.toString()
-                  ? { background: "oklch(0.70 0.13 72)" }
-                  : { background: "oklch(0.18 0.020 228)" }
+                  ? {
+                      background: color,
+                      color: "#fff",
+                      boxShadow: `0 0 12px ${color}60`,
+                    }
+                  : {
+                      background: "oklch(0.16 0.025 278)",
+                      color: "oklch(0.60 0.02 270)",
+                      border: "1px solid oklch(0.22 0.03 275)",
+                    }
               }
               data-ocid="game.quickbet.button"
             >
@@ -369,19 +433,23 @@ export default function GamePage() {
               data-ocid="game.bet.input"
             />
           </div>
-
           <Button
             onClick={handlePlay}
             disabled={isPending}
-            className="w-full py-6 text-base font-bold tracking-wider bg-gold text-primary-foreground hover:opacity-90"
+            className="w-full py-6 text-base font-black tracking-widest border-none"
+            style={{
+              background: `linear-gradient(135deg, ${color}, oklch(0.55 0.25 290))`,
+              boxShadow: `0 0 20px ${color}50`,
+              color: "#fff",
+            }}
             data-ocid="game.play_button"
           >
             {isPending ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Playing...
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> PLAYING...
               </>
             ) : (
-              `🎲 PLAY FOR ${bet} CREDITS`
+              `🎮 PLAY FOR ${bet} CREDITS`
             )}
           </Button>
         </div>

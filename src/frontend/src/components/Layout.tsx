@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, Outlet, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   Coins,
-  Crown,
   Gift,
   History,
   Home,
@@ -12,6 +11,7 @@ import {
   LogOut,
   Trophy,
   Users,
+  Zap,
 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
@@ -62,7 +62,12 @@ export default function Layout() {
   if (isInitializing) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-gold" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin neon-pink" />
+          <p className="text-neon-gradient font-bold tracking-widest text-sm">
+            LOADING CPM VEGAS...
+          </p>
+        </div>
       </div>
     );
   }
@@ -82,8 +87,10 @@ export default function Layout() {
       <header
         className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 gap-6"
         style={{
-          background: "oklch(0.11 0.014 237)",
-          borderBottom: "1px solid oklch(0.22 0.025 225)",
+          background: "oklch(0.09 0.012 280)",
+          borderBottom: "2px solid oklch(0.65 0.28 340 / 0.5)",
+          boxShadow:
+            "0 0 20px oklch(0.65 0.28 340 / 0.15), 0 2px 8px rgba(0,0,0,0.5)",
         }}
       >
         {/* Logo */}
@@ -92,14 +99,40 @@ export default function Layout() {
           className="flex items-center gap-2 shrink-0"
           data-ocid="nav.link"
         >
-          <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center">
-            <Crown
-              className="w-4 h-4"
-              style={{ color: "oklch(0.10 0.012 240)" }}
-            />
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center animate-neon-pulse"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+              boxShadow: "0 0 16px oklch(0.65 0.28 340 / 0.6)",
+            }}
+          >
+            <Zap className="w-5 h-5" style={{ color: "#fff" }} />
           </div>
-          <span className="font-display font-bold text-lg tracking-wider text-gold-gradient">
-            ONYX CASINO
+          <span
+            className="font-display font-black text-base tracking-widest hidden sm:block"
+            style={{
+              background:
+                "linear-gradient(90deg, oklch(0.65 0.28 340), oklch(0.88 0.14 76), oklch(0.70 0.20 190))",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              filter: "drop-shadow(0 0 8px oklch(0.65 0.28 340 / 0.7))",
+            }}
+          >
+            CPM VEGAS AND ARCADE
+          </span>
+          <span
+            className="font-display font-black text-sm tracking-wider sm:hidden"
+            style={{
+              background:
+                "linear-gradient(90deg, oklch(0.65 0.28 340), oklch(0.88 0.14 76))",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            CPM VEGAS
           </span>
         </Link>
 
@@ -112,11 +145,20 @@ export default function Layout() {
             <Link
               key={link.to}
               to={link.to}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-bold tracking-wide transition-all ${
                 currentPath === link.to
-                  ? "text-gold bg-secondary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  ? "neon-pink"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
+              style={
+                currentPath === link.to
+                  ? {
+                      background: "oklch(0.65 0.28 340 / 0.12)",
+                      textShadow: "0 0 10px oklch(0.65 0.28 340 / 0.8)",
+                      boxShadow: "0 0 10px oklch(0.65 0.28 340 / 0.15)",
+                    }
+                  : {}
+              }
               data-ocid={`nav.${link.label.toLowerCase()}.link`}
             >
               {link.label}
@@ -125,10 +167,10 @@ export default function Layout() {
           {isStaff && (
             <Link
               to="/staff"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-bold tracking-wide transition-all ${
                 currentPath === "/staff"
-                  ? "text-gold bg-secondary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  ? "neon-pink"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
               data-ocid="nav.staff.link"
             >
@@ -137,27 +179,34 @@ export default function Layout() {
           )}
         </nav>
 
-        {/* Right: Balance + Actions */}
+        {/* Right */}
         <div className="ml-auto flex items-center gap-3">
           <div
             className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg"
             style={{
-              background: "oklch(0.16 0.018 228)",
-              border: "1px solid oklch(0.22 0.025 225)",
+              background: "oklch(0.14 0.025 278)",
+              border: "1px solid oklch(0.78 0.18 72 / 0.4)",
+              boxShadow: "0 0 10px oklch(0.78 0.18 72 / 0.15)",
             }}
           >
             <Coins className="w-4 h-4 text-gold" />
-            <span className="text-sm font-bold text-gold">
+            <span className="text-sm font-black text-gold">
               {balance !== undefined ? balance.toString() : "—"}
             </span>
             <span className="text-xs text-muted-foreground">credits</span>
           </div>
           <Button
             size="sm"
-            variant="outline"
             onClick={handleClaimDaily}
             disabled={claiming}
-            className="border-gold/50 text-gold hover:bg-gold hover:text-primary-foreground text-xs"
+            className="text-xs font-bold tracking-wider"
+            style={{
+              background:
+                "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+              boxShadow: "0 0 12px oklch(0.65 0.28 340 / 0.4)",
+              color: "#fff",
+              border: "none",
+            }}
             data-ocid="daily.claim_button"
           >
             {claiming ? (
@@ -171,7 +220,7 @@ export default function Layout() {
             size="sm"
             variant="ghost"
             onClick={handleLogout}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
             data-ocid="auth.logout_button"
           >
             <LogOut className="w-4 h-4" />
@@ -181,17 +230,16 @@ export default function Layout() {
 
       {/* Body */}
       <div className="flex flex-1 pt-16">
-        {/* Left Sidebar (staff only) */}
         {isStaff && (
           <aside
             className="hidden lg:flex flex-col w-56 shrink-0 pt-6 pb-4 px-3"
             style={{
-              background: "oklch(0.13 0.015 232)",
-              borderRight: "1px solid oklch(0.22 0.025 225)",
+              background: "oklch(0.10 0.015 282)",
+              borderRight: "1px solid oklch(0.65 0.28 340 / 0.3)",
             }}
           >
-            <p className="text-xs font-semibold text-muted-foreground tracking-widest px-3 mb-2">
-              ACCOUNT DASHBOARD
+            <p className="text-xs font-black text-muted-foreground tracking-widest px-3 mb-2">
+              ACCOUNT
             </p>
             <nav className="flex flex-col gap-1">
               <Link
@@ -202,8 +250,8 @@ export default function Layout() {
                 <Home className="w-4 h-4" /> Dashboard
               </Link>
             </nav>
-            <p className="text-xs font-semibold text-muted-foreground tracking-widest px-3 mt-6 mb-2">
-              ADMIN PANEL
+            <p className="text-xs font-black text-muted-foreground tracking-widest px-3 mt-6 mb-2">
+              ADMIN
             </p>
             <nav className="flex flex-col gap-1">
               <Link
@@ -223,8 +271,6 @@ export default function Layout() {
             </nav>
           </aside>
         )}
-
-        {/* Main Content */}
         <main className="flex-1 min-w-0">
           <Outlet />
         </main>
@@ -232,14 +278,17 @@ export default function Layout() {
 
       {/* Footer */}
       <footer
-        className="border-t border-border py-8 px-6"
-        style={{ background: "oklch(0.11 0.014 237)" }}
+        className="py-8 px-6"
+        style={{
+          background: "oklch(0.09 0.012 280)",
+          borderTop: "2px solid oklch(0.65 0.28 340 / 0.3)",
+        }}
       >
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
             <div>
-              <h4 className="text-sm font-bold text-foreground mb-3 tracking-wider">
-                GAMES
+              <h4 className="text-sm font-black tracking-widest neon-pink mb-3">
+                🎰 CASINO
               </h4>
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>Slots</li>
@@ -249,8 +298,19 @@ export default function Layout() {
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-bold text-foreground mb-3 tracking-wider">
-                ACCOUNT
+              <h4 className="text-sm font-black tracking-widest neon-cyan mb-3">
+                🕹️ ARCADE
+              </h4>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>Plinko</li>
+                <li>Crash Game</li>
+                <li>Mines</li>
+                <li>Coin Pusher</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-black tracking-widest text-gold mb-3">
+                🏆 ACCOUNT
               </h4>
               <ul className="space-y-1 text-sm text-muted-foreground">
                 <li>History</li>
@@ -259,38 +319,28 @@ export default function Layout() {
               </ul>
             </div>
             <div>
-              <h4 className="text-sm font-bold text-foreground mb-3 tracking-wider">
-                SUPPORT
+              <h4
+                className="text-sm font-black tracking-widest mb-3"
+                style={{ color: "oklch(0.55 0.25 290)" }}
+              >
+                ⚡ CPM VEGAS
               </h4>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                <li>FAQ</li>
-                <li>Contact</li>
-                <li>Terms</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-foreground mb-3 tracking-wider">
-                PAYMENT
-              </h4>
-              <div className="flex gap-2 flex-wrap">
-                {["VISA", "MC", "CRYPTO"].map((m) => (
-                  <span
-                    key={m}
-                    className="text-xs px-2 py-1 rounded border border-border text-muted-foreground"
-                  >
-                    {m}
-                  </span>
-                ))}
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Virtual casino & arcade gaming. Play responsibly.
+              </p>
             </div>
           </div>
-          <div className="border-t border-border pt-4 text-center text-xs text-muted-foreground">
-            © {new Date().getFullYear()}. Built with ❤️ using{" "}
+          <div
+            className="pt-4 text-center text-xs text-muted-foreground"
+            style={{ borderTop: "1px solid oklch(0.65 0.28 340 / 0.2)" }}
+          >
+            © {new Date().getFullYear()} CPM Vegas And Arcade. Built with ❤️
+            using{" "}
             <a
               href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gold hover:underline"
+              className="neon-pink hover:underline"
             >
               caffeine.ai
             </a>
