@@ -179,6 +179,7 @@ export interface backendInterface {
     addCredits(user: Principal, amount: bigint): Promise<void>;
     addProduct(name: string, description: string, category: string, pointPrice: bigint): Promise<Product>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    canClaimDailyCredits(): Promise<boolean>;
     claimDailyCredits(): Promise<void>;
     getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
     getAllProducts(): Promise<Array<Product>>;
@@ -260,6 +261,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async canClaimDailyCredits(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.canClaimDailyCredits();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.canClaimDailyCredits();
             return result;
         }
     }

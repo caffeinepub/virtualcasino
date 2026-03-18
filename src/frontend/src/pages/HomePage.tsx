@@ -20,6 +20,7 @@ import { GameResult, GameType } from "../backend.d";
 import FlipGameCard from "../components/FlipGameCard";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
 import {
+  useCanClaimDailyCredits,
   useClaimDailyCredits,
   useGetCallerUserProfile,
   useGetDailyWinners,
@@ -793,6 +794,7 @@ function LoggedInHome({
   );
   const { mutateAsync: claimDaily, isPending: claiming } =
     useClaimDailyCredits();
+  const { data: canClaim } = useCanClaimDailyCredits();
 
   const username =
     profile?.name ||
@@ -806,11 +808,27 @@ function LoggedInHome({
     winners.length > 0 ? winners : SAMPLE_WINNERS.map((w) => ({ ...w }));
 
   const handleClaimDaily = async () => {
+    if (canClaim === false) {
+      toast.error(
+        "You have already claimed your daily bonus today. Come back tomorrow!",
+      );
+      return;
+    }
     try {
       await claimDaily();
       toast.success("🎁 +5 daily credits claimed!");
-    } catch {
-      toast.error("Already claimed today or error occurred");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.toLowerCase().includes("once per day") ||
+        msg.toLowerCase().includes("already")
+      ) {
+        toast.error(
+          "You have already claimed your daily bonus today. Come back tomorrow!",
+        );
+      } else {
+        toast.error("Failed to claim daily bonus. Please try again.");
+      }
     }
   };
 
@@ -927,7 +945,7 @@ function LoggedInHome({
               <motion.button
                 type="button"
                 onClick={handleClaimDaily}
-                disabled={claiming}
+                disabled={claiming || canClaim === false}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 className="px-8 py-3.5 rounded-xl font-black text-base tracking-widest w-full sm:w-auto"
@@ -942,7 +960,9 @@ function LoggedInHome({
                 {claiming ? (
                   <Loader2 className="w-4 h-4 animate-spin inline mr-2" />
                 ) : null}
-                🎁 CLAIM DAILY BONUS
+                {canClaim === false
+                  ? "✅ CLAIMED TODAY"
+                  : "🎁 CLAIM DAILY BONUS"}
               </motion.button>
             </div>
           </motion.div>

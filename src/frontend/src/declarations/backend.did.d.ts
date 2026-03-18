@@ -89,6 +89,7 @@ export interface _SERVICE {
   'addCredits' : ActorMethod<[Principal, bigint], undefined>,
   'addProduct' : ActorMethod<[string, string, string, bigint], Product>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'canClaimDailyCredits' : ActorMethod<[], boolean>,
   'claimDailyCredits' : ActorMethod<[], undefined>,
   'getAllGameSettings' : ActorMethod<[], Array<[string, GameSettings]>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,

@@ -96,6 +96,7 @@ export interface backendInterface {
     addCredits(user: Principal, amount: bigint): Promise<void>;
     addProduct(name: string, description: string, category: string, pointPrice: bigint): Promise<Product>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    canClaimDailyCredits(): Promise<boolean>;
     claimDailyCredits(): Promise<void>;
     getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
     getAllProducts(): Promise<Array<Product>>;

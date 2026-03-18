@@ -98,6 +98,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'canClaimDailyCredits' : IDL.Func([], [IDL.Bool], ['query']),
   'claimDailyCredits' : IDL.Func([], [], []),
   'getAllGameSettings' : IDL.Func(
       [],
@@ -229,7 +230,8 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'claimDailyCredits' : IDL.Func([], [], []),
+    'canClaimDailyCredits' : IDL.Func([], [IDL.Bool], ['query']),
+  'claimDailyCredits' : IDL.Func([], [], []),
     'getAllGameSettings' : IDL.Func(
         [],
         [IDL.Vec(IDL.Tuple(IDL.Text, GameSettings))],

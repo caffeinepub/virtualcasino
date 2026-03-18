@@ -231,6 +231,20 @@ actor {
     lastClaimDay.add(caller, currentDay);
   };
 
+  public query ({ caller }) func canClaimDailyCredits() : async Bool {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      return false;
+    };
+    let currentDay = Time.now() / 86_400_000_000_000;
+    switch (lastClaimDay.get(caller)) {
+      case (?lastDay) {
+        if (lastDay == currentDay) { return false };
+      };
+      case (_) {};
+    };
+    return true;
+  };
+
   public shared ({ caller }) func setGameSettings(gameType : GameType, settings : GameSettings) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can set game settings");

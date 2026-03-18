@@ -1346,7 +1346,6 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function StaffPage() {
-  const { data: isAdmin, isLoading } = useIsCallerAdmin();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [unlocked, setUnlocked] = useState(false);
   const [pin, setPin] = useState("");
@@ -1374,17 +1373,6 @@ export default function StaffPage() {
     setPin((p) => p.slice(0, -1));
     setPinError(false);
   };
-
-  if (isLoading) {
-    return (
-      <div
-        className="flex justify-center py-20"
-        data-ocid="staff.loading_state"
-      >
-        <Loader2 className="w-8 h-8 animate-spin" style={neonPinkStyle} />
-      </div>
-    );
-  }
 
   if (!unlocked) {
     const numpadKeys = [
@@ -1552,21 +1540,6 @@ export default function StaffPage() {
             </div>
           </div>
         </motion.div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center py-20 px-4"
-        data-ocid="staff.error_state"
-      >
-        <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
-        <h2 className="font-display font-black text-2xl mb-2">ACCESS DENIED</h2>
-        <p className="text-muted-foreground text-center">
-          You don't have permission to access the Staff Panel.
-        </p>
       </div>
     );
   }

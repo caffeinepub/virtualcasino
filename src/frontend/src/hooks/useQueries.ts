@@ -92,6 +92,20 @@ export function useGetGameHistory(user: Principal | undefined) {
   });
 }
 
+export function useCanClaimDailyCredits() {
+  const { actor, isFetching } = useActor();
+  const { identity } = useInternetIdentity();
+  return useQuery<boolean>({
+    queryKey: ["canClaimDailyCredits"],
+    queryFn: async () => {
+      if (!actor) return false;
+      return actor.canClaimDailyCredits();
+    },
+    enabled: !!actor && !isFetching && !!identity,
+    refetchInterval: 30000,
+  });
+}
+
 export function useClaimDailyCredits() {
   const { actor } = useActor();
   const qc = useQueryClient();
