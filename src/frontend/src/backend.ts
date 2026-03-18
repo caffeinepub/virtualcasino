@@ -110,12 +110,31 @@ export enum GameResult {
     lose = "lose"
 }
 export enum GameType {
+    war = "war",
+    mines = "mines",
+    penaltyShootout = "penaltyShootout",
     blackjack = "blackjack",
+    ballDrop = "ballDrop",
+    plinko = "plinko",
     dice = "dice",
+    threeCardPoker = "threeCardPoker",
+    hiLo = "hiLo",
+    keno = "keno",
+    craps = "craps",
+    wheelOfFortune = "wheelOfFortune",
+    scratchCards = "scratchCards",
+    limbo = "limbo",
+    sicBo = "sicBo",
     baccarat = "baccarat",
     slots = "slots",
+    caribbeanStud = "caribbeanStud",
+    paiGowPoker = "paiGowPoker",
+    letItRide = "letItRide",
     videoPoker = "videoPoker",
-    roulette = "roulette"
+    roulette = "roulette",
+    casinoHoldem = "casinoHoldem",
+    coinPusher = "coinPusher",
+    crashGame = "crashGame"
 }
 export enum UserRole {
     admin = "admin",
@@ -385,19 +404,57 @@ function from_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Ui
     return "win" in value ? GameResult.win : "lose" in value ? GameResult.lose : value;
 }
 function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    war: null;
+} | {
+    mines: null;
+} | {
+    penaltyShootout: null;
+} | {
     blackjack: null;
 } | {
+    ballDrop: null;
+} | {
+    plinko: null;
+} | {
     dice: null;
+} | {
+    threeCardPoker: null;
+} | {
+    hiLo: null;
+} | {
+    keno: null;
+} | {
+    craps: null;
+} | {
+    wheelOfFortune: null;
+} | {
+    scratchCards: null;
+} | {
+    limbo: null;
+} | {
+    sicBo: null;
 } | {
     baccarat: null;
 } | {
     slots: null;
 } | {
+    caribbeanStud: null;
+} | {
+    paiGowPoker: null;
+} | {
+    letItRide: null;
+} | {
     videoPoker: null;
 } | {
     roulette: null;
+} | {
+    casinoHoldem: null;
+} | {
+    coinPusher: null;
+} | {
+    crashGame: null;
 }): GameType {
-    return "blackjack" in value ? GameType.blackjack : "dice" in value ? GameType.dice : "baccarat" in value ? GameType.baccarat : "slots" in value ? GameType.slots : "videoPoker" in value ? GameType.videoPoker : "roulette" in value ? GameType.roulette : value;
+    return "war" in value ? GameType.war : "mines" in value ? GameType.mines : "penaltyShootout" in value ? GameType.penaltyShootout : "blackjack" in value ? GameType.blackjack : "ballDrop" in value ? GameType.ballDrop : "plinko" in value ? GameType.plinko : "dice" in value ? GameType.dice : "threeCardPoker" in value ? GameType.threeCardPoker : "hiLo" in value ? GameType.hiLo : "keno" in value ? GameType.keno : "craps" in value ? GameType.craps : "wheelOfFortune" in value ? GameType.wheelOfFortune : "scratchCards" in value ? GameType.scratchCards : "limbo" in value ? GameType.limbo : "sicBo" in value ? GameType.sicBo : "baccarat" in value ? GameType.baccarat : "slots" in value ? GameType.slots : "caribbeanStud" in value ? GameType.caribbeanStud : "paiGowPoker" in value ? GameType.paiGowPoker : "letItRide" in value ? GameType.letItRide : "videoPoker" in value ? GameType.videoPoker : "roulette" in value ? GameType.roulette : "casinoHoldem" in value ? GameType.casinoHoldem : "coinPusher" in value ? GameType.coinPusher : "crashGame" in value ? GameType.crashGame : value;
 }
 function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
@@ -418,30 +475,106 @@ function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
 function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GameType): {
+    war: null;
+} | {
+    mines: null;
+} | {
+    penaltyShootout: null;
+} | {
     blackjack: null;
 } | {
+    ballDrop: null;
+} | {
+    plinko: null;
+} | {
     dice: null;
+} | {
+    threeCardPoker: null;
+} | {
+    hiLo: null;
+} | {
+    keno: null;
+} | {
+    craps: null;
+} | {
+    wheelOfFortune: null;
+} | {
+    scratchCards: null;
+} | {
+    limbo: null;
+} | {
+    sicBo: null;
 } | {
     baccarat: null;
 } | {
     slots: null;
 } | {
+    caribbeanStud: null;
+} | {
+    paiGowPoker: null;
+} | {
+    letItRide: null;
+} | {
     videoPoker: null;
 } | {
     roulette: null;
+} | {
+    casinoHoldem: null;
+} | {
+    coinPusher: null;
+} | {
+    crashGame: null;
 } {
-    return value == GameType.blackjack ? {
+    return value == GameType.war ? {
+        war: null
+    } : value == GameType.mines ? {
+        mines: null
+    } : value == GameType.penaltyShootout ? {
+        penaltyShootout: null
+    } : value == GameType.blackjack ? {
         blackjack: null
+    } : value == GameType.ballDrop ? {
+        ballDrop: null
+    } : value == GameType.plinko ? {
+        plinko: null
     } : value == GameType.dice ? {
         dice: null
+    } : value == GameType.threeCardPoker ? {
+        threeCardPoker: null
+    } : value == GameType.hiLo ? {
+        hiLo: null
+    } : value == GameType.keno ? {
+        keno: null
+    } : value == GameType.craps ? {
+        craps: null
+    } : value == GameType.wheelOfFortune ? {
+        wheelOfFortune: null
+    } : value == GameType.scratchCards ? {
+        scratchCards: null
+    } : value == GameType.limbo ? {
+        limbo: null
+    } : value == GameType.sicBo ? {
+        sicBo: null
     } : value == GameType.baccarat ? {
         baccarat: null
     } : value == GameType.slots ? {
         slots: null
+    } : value == GameType.caribbeanStud ? {
+        caribbeanStud: null
+    } : value == GameType.paiGowPoker ? {
+        paiGowPoker: null
+    } : value == GameType.letItRide ? {
+        letItRide: null
     } : value == GameType.videoPoker ? {
         videoPoker: null
     } : value == GameType.roulette ? {
         roulette: null
+    } : value == GameType.casinoHoldem ? {
+        casinoHoldem: null
+    } : value == GameType.coinPusher ? {
+        coinPusher: null
+    } : value == GameType.crashGame ? {
+        crashGame: null
     } : value;
 }
 function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {

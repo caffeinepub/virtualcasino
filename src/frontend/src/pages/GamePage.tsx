@@ -49,6 +49,122 @@ const GAME_INFO: Record<
     description: "Bet on Player or Banker!",
     rules: "Closest to 9 wins. 8 or 9 = Natural win!",
   },
+  [GameType.keno]: {
+    label: "Keno",
+    emoji: "🔢",
+    description: "Pick your lucky numbers!",
+    rules: "Choose up to 10 numbers. More matches = bigger wins!",
+  },
+  [GameType.scratchCards]: {
+    label: "Scratch Cards",
+    emoji: "🎫",
+    description: "Instant win potential!",
+    rules: "Scratch to reveal your prize. Match 3 symbols to win!",
+  },
+  [GameType.craps]: {
+    label: "Craps",
+    emoji: "🎲",
+    description: "Roll the bones!",
+    rules: "Bet on the dice outcome. Pass line bets are most popular.",
+  },
+  [GameType.paiGowPoker]: {
+    label: "Pai Gow Poker",
+    emoji: "🀄",
+    description: "Ancient Chinese strategy!",
+    rules: "Split 7 cards into two hands. Beat the banker's hands to win.",
+  },
+  [GameType.sicBo]: {
+    label: "Sic Bo",
+    emoji: "🎰",
+    description: "Three dice action!",
+    rules: "Predict the outcome of 3 dice. Big/Small bets are easiest.",
+  },
+  [GameType.war]: {
+    label: "War",
+    emoji: "🃏",
+    description: "Simple card battle!",
+    rules: "Higher card wins. Tie? Go to War for double or nothing!",
+  },
+  [GameType.caribbeanStud]: {
+    label: "Caribbean Stud",
+    emoji: "♣️",
+    description: "Caribbean vibes!",
+    rules: "Beat the dealer's 5-card poker hand to win.",
+  },
+  [GameType.letItRide]: {
+    label: "Let It Ride",
+    emoji: "🌊",
+    description: "Ride the wave!",
+    rules: "Let good hands ride for bigger payouts. Pull back bad ones.",
+  },
+  [GameType.threeCardPoker]: {
+    label: "Three Card Poker",
+    emoji: "🃏",
+    description: "Three card magic!",
+    rules: "Straight flush, three of a kind, or straight pays big.",
+  },
+  [GameType.casinoHoldem]: {
+    label: "Casino Hold'em",
+    emoji: "♠️",
+    description: "Texas style poker!",
+    rules: "Beat the dealer with the best 5-card hand using community cards.",
+  },
+  [GameType.wheelOfFortune]: {
+    label: "Wheel of Fortune",
+    emoji: "🎡",
+    description: "Spin to win big!",
+    rules: "Bet on which symbol the wheel stops on. 40x payout possible!",
+  },
+  [GameType.coinPusher]: {
+    label: "Coin Pusher",
+    emoji: "🪙",
+    description: "Push to win!",
+    rules: "Drop coins to push more coins off the edge and collect them.",
+  },
+  [GameType.plinko]: {
+    label: "Plinko",
+    emoji: "📍",
+    description: "Drop the ball!",
+    rules: "Drop the ball and watch it bounce for multiplied winnings.",
+  },
+  [GameType.crashGame]: {
+    label: "Crash Game",
+    emoji: "🚀",
+    description: "Cash out in time!",
+    rules: "The multiplier grows. Cash out before it crashes to win!",
+  },
+  [GameType.mines]: {
+    label: "Mines",
+    emoji: "💣",
+    description: "Avoid the mines!",
+    rules: "Reveal safe tiles to multiply your bet. Hit a mine and lose all.",
+  },
+  [GameType.limbo]: {
+    label: "Limbo",
+    emoji: "🌀",
+    description: "How low can you go?",
+    rules:
+      "Set a target multiplier. The lower the target, the higher the chance to win.",
+  },
+  [GameType.hiLo]: {
+    label: "Hi-Lo",
+    emoji: "🃏",
+    description: "Higher or lower?",
+    rules:
+      "Guess if the next card will be higher or lower. Chain correct guesses!",
+  },
+  [GameType.penaltyShootout]: {
+    label: "Penalty Shootout",
+    emoji: "⚽",
+    description: "Score to win!",
+    rules: "Pick your corner and shoot. Beat the goalkeeper to win!",
+  },
+  [GameType.ballDrop]: {
+    label: "Ball Drop",
+    emoji: "🎱",
+    description: "Drop & win!",
+    rules: "Drop the ball through pegs to land in a prize slot.",
+  },
 };
 
 const QUICK_BETS = [5, 10, 25, 50, 100];

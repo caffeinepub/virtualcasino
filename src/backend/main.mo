@@ -3,17 +3,18 @@ import List "mo:core/List";
 import Map "mo:core/Map";
 import Nat "mo:core/Nat";
 import Int "mo:core/Int";
-import Iter "mo:core/Iter";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+(with migration = Migration.run)
 actor {
-  type GameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat };
+  type GameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat; #keno; #scratchCards; #craps; #paiGowPoker; #sicBo; #war; #caribbeanStud; #letItRide; #threeCardPoker; #casinoHoldem; #wheelOfFortune; #coinPusher; #plinko; #crashGame; #mines; #limbo; #hiLo; #penaltyShootout; #ballDrop };
   type GameResult = { #win; #lose };
   type DailyWinner = {
     user : Principal;
@@ -216,3 +217,4 @@ actor {
     shuffled.sliceToArray(0, Int.abs(Nat.min(10, shuffled.size())));
   };
 };
+

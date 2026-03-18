@@ -28,12 +28,31 @@ export enum GameResult {
     lose = "lose"
 }
 export enum GameType {
+    war = "war",
+    mines = "mines",
+    penaltyShootout = "penaltyShootout",
     blackjack = "blackjack",
+    ballDrop = "ballDrop",
+    plinko = "plinko",
     dice = "dice",
+    threeCardPoker = "threeCardPoker",
+    hiLo = "hiLo",
+    keno = "keno",
+    craps = "craps",
+    wheelOfFortune = "wheelOfFortune",
+    scratchCards = "scratchCards",
+    limbo = "limbo",
+    sicBo = "sicBo",
     baccarat = "baccarat",
     slots = "slots",
+    caribbeanStud = "caribbeanStud",
+    paiGowPoker = "paiGowPoker",
+    letItRide = "letItRide",
     videoPoker = "videoPoker",
-    roulette = "roulette"
+    roulette = "roulette",
+    casinoHoldem = "casinoHoldem",
+    coinPusher = "coinPusher",
+    crashGame = "crashGame"
 }
 export enum UserRole {
     admin = "admin",

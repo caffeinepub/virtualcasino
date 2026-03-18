@@ -21,12 +21,31 @@ export const DailyWinner = IDL.Record({
 export const GameResult = IDL.Variant({ 'win' : IDL.Null, 'lose' : IDL.Null });
 export const Time = IDL.Int;
 export const GameType = IDL.Variant({
+  'war' : IDL.Null,
+  'mines' : IDL.Null,
+  'penaltyShootout' : IDL.Null,
   'blackjack' : IDL.Null,
+  'ballDrop' : IDL.Null,
+  'plinko' : IDL.Null,
   'dice' : IDL.Null,
+  'threeCardPoker' : IDL.Null,
+  'hiLo' : IDL.Null,
+  'keno' : IDL.Null,
+  'craps' : IDL.Null,
+  'wheelOfFortune' : IDL.Null,
+  'scratchCards' : IDL.Null,
+  'limbo' : IDL.Null,
+  'sicBo' : IDL.Null,
   'baccarat' : IDL.Null,
   'slots' : IDL.Null,
+  'caribbeanStud' : IDL.Null,
+  'paiGowPoker' : IDL.Null,
+  'letItRide' : IDL.Null,
   'videoPoker' : IDL.Null,
   'roulette' : IDL.Null,
+  'casinoHoldem' : IDL.Null,
+  'coinPusher' : IDL.Null,
+  'crashGame' : IDL.Null,
 });
 export const UserGame = IDL.Record({
   'bet' : IDL.Nat,
@@ -74,12 +93,31 @@ export const idlFactory = ({ IDL }) => {
   const GameResult = IDL.Variant({ 'win' : IDL.Null, 'lose' : IDL.Null });
   const Time = IDL.Int;
   const GameType = IDL.Variant({
+    'war' : IDL.Null,
+    'mines' : IDL.Null,
+    'penaltyShootout' : IDL.Null,
     'blackjack' : IDL.Null,
+    'ballDrop' : IDL.Null,
+    'plinko' : IDL.Null,
     'dice' : IDL.Null,
+    'threeCardPoker' : IDL.Null,
+    'hiLo' : IDL.Null,
+    'keno' : IDL.Null,
+    'craps' : IDL.Null,
+    'wheelOfFortune' : IDL.Null,
+    'scratchCards' : IDL.Null,
+    'limbo' : IDL.Null,
+    'sicBo' : IDL.Null,
     'baccarat' : IDL.Null,
     'slots' : IDL.Null,
+    'caribbeanStud' : IDL.Null,
+    'paiGowPoker' : IDL.Null,
+    'letItRide' : IDL.Null,
     'videoPoker' : IDL.Null,
     'roulette' : IDL.Null,
+    'casinoHoldem' : IDL.Null,
+    'coinPusher' : IDL.Null,
+    'crashGame' : IDL.Null,
   });
   const UserGame = IDL.Record({
     'bet' : IDL.Nat,

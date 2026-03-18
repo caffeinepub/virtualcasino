@@ -13,12 +13,31 @@ import type { Principal } from '@icp-sdk/core/principal';
 export interface DailyWinner { 'user' : Principal, 'amount' : bigint }
 export type GameResult = { 'win' : null } |
   { 'lose' : null };
-export type GameType = { 'blackjack' : null } |
+export type GameType = { 'war' : null } |
+  { 'mines' : null } |
+  { 'penaltyShootout' : null } |
+  { 'blackjack' : null } |
+  { 'ballDrop' : null } |
+  { 'plinko' : null } |
   { 'dice' : null } |
+  { 'threeCardPoker' : null } |
+  { 'hiLo' : null } |
+  { 'keno' : null } |
+  { 'craps' : null } |
+  { 'wheelOfFortune' : null } |
+  { 'scratchCards' : null } |
+  { 'limbo' : null } |
+  { 'sicBo' : null } |
   { 'baccarat' : null } |
   { 'slots' : null } |
+  { 'caribbeanStud' : null } |
+  { 'paiGowPoker' : null } |
+  { 'letItRide' : null } |
   { 'videoPoker' : null } |
-  { 'roulette' : null };
+  { 'roulette' : null } |
+  { 'casinoHoldem' : null } |
+  { 'coinPusher' : null } |
+  { 'crashGame' : null };
 export type Time = bigint;
 export interface UserGame {
   'bet' : bigint,
