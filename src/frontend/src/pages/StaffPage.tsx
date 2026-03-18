@@ -1386,21 +1386,6 @@ export default function StaffPage() {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center py-20 px-4"
-        data-ocid="staff.error_state"
-      >
-        <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
-        <h2 className="font-display font-black text-2xl mb-2">ACCESS DENIED</h2>
-        <p className="text-muted-foreground text-center">
-          You don't have permission to access the Staff Panel.
-        </p>
-      </div>
-    );
-  }
-
   if (!unlocked) {
     const numpadKeys = [
       "1",
@@ -1567,6 +1552,21 @@ export default function StaffPage() {
             </div>
           </div>
         </motion.div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center py-20 px-4"
+        data-ocid="staff.error_state"
+      >
+        <ShieldAlert className="w-16 h-16 text-destructive mb-4" />
+        <h2 className="font-display font-black text-2xl mb-2">ACCESS DENIED</h2>
+        <p className="text-muted-foreground text-center">
+          You don't have permission to access the Staff Panel.
+        </p>
       </div>
     );
   }
