@@ -38,7 +38,7 @@ export default function Layout() {
   const { mutateAsync: claimDaily, isPending: claiming } =
     useClaimDailyCredits();
 
-  const isStaff = role === "admin";
+  const _isStaff = role === "admin";
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
@@ -200,53 +200,49 @@ export default function Layout() {
               </Link>
             );
           })}
-          {isStaff && (
-            <Link to="/staff" data-ocid="nav.staff.link">
-              <Button
-                size="sm"
-                className="ml-2 font-black tracking-widest text-xs px-4 border-none"
-                style={{
-                  background:
-                    currentPath === "/staff"
-                      ? "linear-gradient(135deg, oklch(0.72 0.30 340), oklch(0.60 0.27 290))"
-                      : "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
-                  boxShadow:
-                    "0 0 16px oklch(0.65 0.28 340 / 0.6), 0 0 32px oklch(0.65 0.28 340 / 0.3)",
-                  color: "#fff",
-                  animation: "neon-pulse 2s ease-in-out infinite",
-                }}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                STAFF PANEL
-              </Button>
-            </Link>
-          )}
+          <Link to="/staff" data-ocid="nav.staff.link">
+            <Button
+              size="sm"
+              className="ml-2 font-black tracking-widest text-xs px-4 border-none"
+              style={{
+                background:
+                  currentPath === "/staff"
+                    ? "linear-gradient(135deg, oklch(0.72 0.30 340), oklch(0.60 0.27 290))"
+                    : "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+                boxShadow:
+                  "0 0 16px oklch(0.65 0.28 340 / 0.6), 0 0 32px oklch(0.65 0.28 340 / 0.3)",
+                color: "#fff",
+                animation: "neon-pulse 2s ease-in-out infinite",
+              }}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+              STAFF PANEL
+            </Button>
+          </Link>
         </nav>
 
         {/* Right */}
         <div className="ml-auto flex items-center gap-2">
-          {/* Staff button — always visible for staff on ALL screen sizes */}
-          {isStaff && (
-            <Link
-              to="/staff"
-              className="md:hidden"
-              data-ocid="nav.staff.mobile.link"
+          {/* Staff button — mobile */}
+          <Link
+            to="/staff"
+            className="md:hidden"
+            data-ocid="nav.staff.mobile.link"
+          >
+            <Button
+              size="sm"
+              className="font-black text-xs px-3 border-none"
+              style={{
+                background:
+                  "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+                boxShadow: "0 0 12px oklch(0.65 0.28 340 / 0.5)",
+                color: "#fff",
+              }}
             >
-              <Button
-                size="sm"
-                className="font-black text-xs px-3 border-none"
-                style={{
-                  background:
-                    "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
-                  boxShadow: "0 0 12px oklch(0.65 0.28 340 / 0.5)",
-                  color: "#fff",
-                }}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                STAFF
-              </Button>
-            </Link>
-          )}
+              <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+              STAFF
+            </Button>
+          </Link>
 
           {/* Points balance */}
           {points !== undefined && (
@@ -364,6 +360,25 @@ export default function Layout() {
             </Link>
           );
         })}
+        {/* Staff link in mobile bottom nav */}
+        <Link
+          to="/staff"
+          className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all"
+          style={{
+            color:
+              currentPath === "/staff"
+                ? "oklch(0.65 0.28 340)"
+                : "oklch(0.65 0.28 340 / 0.65)",
+            textShadow:
+              currentPath === "/staff"
+                ? "0 0 8px oklch(0.65 0.28 340 / 0.8)"
+                : "none",
+          }}
+          data-ocid="nav.mobile.staff.link"
+        >
+          <ShieldCheck className="w-5 h-5" />
+          <span className="text-xs font-black tracking-wide">STAFF</span>
+        </Link>
       </nav>
 
       {/* Body */}
