@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   CreditCard,
   Loader2,
+  Lock,
   PackageOpen,
   Pencil,
   Plus,
@@ -1347,6 +1348,32 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 export default function StaffPage() {
   const { data: isAdmin, isLoading } = useIsCallerAdmin();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [unlocked, setUnlocked] = useState(false);
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState(false);
+
+  const handlePinInput = (digit: string) => {
+    if (pin.length >= 4) return;
+    const newPin = pin + digit;
+    setPin(newPin);
+    setPinError(false);
+    if (newPin.length === 4) {
+      if (newPin === "2006") {
+        setUnlocked(true);
+      } else {
+        setPinError(true);
+        setTimeout(() => {
+          setPin("");
+          setPinError(false);
+        }, 800);
+      }
+    }
+  };
+
+  const handlePinBackspace = () => {
+    setPin((p) => p.slice(0, -1));
+    setPinError(false);
+  };
 
   if (isLoading) {
     return (
@@ -1370,6 +1397,176 @@ export default function StaffPage() {
         <p className="text-muted-foreground text-center">
           You don't have permission to access the Staff Panel.
         </p>
+      </div>
+    );
+  }
+
+  if (!unlocked) {
+    const numpadKeys = [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "",
+      "0",
+      "⌫",
+    ];
+    return (
+      <div
+        className="min-h-[80vh] flex items-center justify-center px-4"
+        data-ocid="staff.pin.panel"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-sm"
+        >
+          <div
+            className="rounded-2xl p-8 flex flex-col items-center gap-6"
+            style={{
+              background: "oklch(0.09 0.015 280)",
+              border: "2px solid oklch(0.65 0.28 340 / 0.6)",
+              boxShadow:
+                "0 0 40px oklch(0.65 0.28 340 / 0.2), 0 0 80px oklch(0.55 0.25 290 / 0.1)",
+            }}
+          >
+            {/* Icon + Title */}
+            <div className="flex flex-col items-center gap-3">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.65 0.28 340 / 0.2), oklch(0.55 0.25 290 / 0.2))",
+                  border: "2px solid oklch(0.65 0.28 340 / 0.5)",
+                  boxShadow: "0 0 20px oklch(0.65 0.28 340 / 0.3)",
+                }}
+              >
+                <Lock
+                  className="w-8 h-8"
+                  style={{
+                    color: "oklch(0.65 0.28 340)",
+                    filter: "drop-shadow(0 0 6px oklch(0.65 0.28 340 / 0.8))",
+                  }}
+                />
+              </div>
+              <h2
+                className="font-display font-black text-2xl tracking-[0.2em]"
+                style={{
+                  background:
+                    "linear-gradient(90deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  filter: "drop-shadow(0 0 8px oklch(0.65 0.28 340 / 0.5))",
+                }}
+              >
+                STAFF ACCESS
+              </h2>
+              <p className="text-muted-foreground text-sm tracking-widest">
+                ENTER ACCESS CODE
+              </p>
+            </div>
+
+            {/* PIN dots */}
+            <div className="flex gap-4" data-ocid="staff.pin.input">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="w-12 h-12 rounded-xl flex items-center justify-center transition-all"
+                  style={{
+                    background:
+                      pin.length > i
+                        ? "linear-gradient(135deg, oklch(0.65 0.28 340), oklch(0.55 0.25 290))"
+                        : "oklch(0.14 0.02 280)",
+                    border: pinError
+                      ? "2px solid oklch(0.55 0.25 25)"
+                      : pin.length > i
+                        ? "2px solid oklch(0.65 0.28 340)"
+                        : "2px solid oklch(0.25 0.05 280)",
+                    boxShadow:
+                      pin.length > i && !pinError
+                        ? "0 0 12px oklch(0.65 0.28 340 / 0.5)"
+                        : pinError
+                          ? "0 0 12px oklch(0.55 0.25 25 / 0.5)"
+                          : "none",
+                  }}
+                >
+                  {pin.length > i && (
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{
+                        background: pinError ? "oklch(0.65 0.25 25)" : "#fff",
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Error message */}
+            {pinError && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm font-black tracking-widest"
+                style={{ color: "oklch(0.65 0.25 25)" }}
+                data-ocid="staff.pin.error_state"
+              >
+                INCORRECT CODE
+              </motion.p>
+            )}
+
+            {/* Numpad */}
+            <div className="grid grid-cols-3 gap-3 w-full">
+              {numpadKeys.map((key, keyIdx) => (
+                <button
+                  type="button"
+                  // biome-ignore lint/suspicious/noArrayIndexKey: numpad positions are stable
+                  key={`numpad-${keyIdx}`}
+                  onClick={() => {
+                    if (key === "⌫") handlePinBackspace();
+                    else if (key !== "") handlePinInput(key);
+                  }}
+                  disabled={key === ""}
+                  className="h-14 rounded-xl font-black text-xl tracking-wide transition-all active:scale-95 disabled:pointer-events-none disabled:opacity-0"
+                  style={{
+                    background:
+                      key === "⌫"
+                        ? "oklch(0.16 0.03 280)"
+                        : key === ""
+                          ? "transparent"
+                          : "oklch(0.14 0.02 280)",
+                    border:
+                      key === "" ? "none" : "1px solid oklch(0.25 0.05 280)",
+                    color:
+                      key === "⌫"
+                        ? "oklch(0.65 0.28 340)"
+                        : "oklch(0.9 0.02 280)",
+                    boxShadow:
+                      key !== "" && key !== "⌫"
+                        ? "0 2px 8px rgba(0,0,0,0.3)"
+                        : "none",
+                  }}
+                  data-ocid={
+                    key === "⌫"
+                      ? "staff.pin.backspace"
+                      : key !== ""
+                        ? `staff.pin.key.${key}`
+                        : undefined
+                  }
+                >
+                  {key}
+                </button>
+              ))}
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }

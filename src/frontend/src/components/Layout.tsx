@@ -93,7 +93,7 @@ export default function Layout() {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Header */}
       <header
-        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-6 gap-6"
+        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center px-4 md:px-6 gap-4 md:gap-6"
         style={{
           background: "oklch(0.09 0.012 280)",
           borderBottom: "2px solid oklch(0.65 0.28 340 / 0.5)",
@@ -144,34 +144,62 @@ export default function Layout() {
           </span>
         </Link>
 
-        {/* Center Nav */}
+        {/* Center Nav — desktop */}
         <nav
           className="hidden md:flex items-center gap-1 mx-auto"
           data-ocid="nav.section"
         >
-          {navLinks.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={`px-4 py-2 rounded-md text-sm font-bold tracking-wide transition-all ${
-                currentPath === link.to
-                  ? "neon-pink"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-              style={
-                currentPath === link.to
-                  ? {
-                      background: "oklch(0.65 0.28 340 / 0.12)",
-                      textShadow: "0 0 10px oklch(0.65 0.28 340 / 0.8)",
-                      boxShadow: "0 0 10px oklch(0.65 0.28 340 / 0.15)",
-                    }
-                  : {}
-              }
-              data-ocid={`nav.${link.label.toLowerCase()}.link`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isShop = link.to === "/shop";
+            const isActive = currentPath === link.to;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`px-4 py-2 rounded-md text-sm font-black tracking-wide transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? isShop
+                      ? "neon-cyan"
+                      : "neon-pink"
+                    : isShop
+                      ? "hover:text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                }`}
+                style={{
+                  ...(isActive
+                    ? {
+                        background: isShop
+                          ? "oklch(0.70 0.20 190 / 0.12)"
+                          : "oklch(0.65 0.28 340 / 0.12)",
+                        textShadow: isShop
+                          ? "0 0 10px oklch(0.70 0.20 190 / 0.8)"
+                          : "0 0 10px oklch(0.65 0.28 340 / 0.8)",
+                        boxShadow: isShop
+                          ? "0 0 10px oklch(0.70 0.20 190 / 0.15)"
+                          : "0 0 10px oklch(0.65 0.28 340 / 0.15)",
+                      }
+                    : isShop
+                      ? {
+                          color: "oklch(0.70 0.20 190)",
+                          textShadow: "0 0 8px oklch(0.70 0.20 190 / 0.5)",
+                        }
+                      : {}),
+                }}
+                data-ocid={`nav.${link.label.toLowerCase()}.link`}
+              >
+                {isShop && <Star className="w-3.5 h-3.5" />}
+                {link.label}
+                {isShop && (
+                  <span
+                    className="text-xs font-black"
+                    style={{ color: "oklch(0.70 0.20 190 / 0.7)" }}
+                  >
+                    PTS
+                  </span>
+                )}
+              </Link>
+            );
+          })}
           {isStaff && (
             <Link to="/staff" data-ocid="nav.staff.link">
               <Button
@@ -197,6 +225,7 @@ export default function Layout() {
 
         {/* Right */}
         <div className="ml-auto flex items-center gap-2">
+          {/* Staff button — always visible for staff on ALL screen sizes */}
           {isStaff && (
             <Link
               to="/staff"
@@ -213,7 +242,8 @@ export default function Layout() {
                   color: "#fff",
                 }}
               >
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
+                STAFF
               </Button>
             </Link>
           )}
@@ -292,8 +322,52 @@ export default function Layout() {
         </div>
       </header>
 
+      {/* Mobile Bottom Nav */}
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center"
+        style={{
+          background: "oklch(0.09 0.012 280)",
+          borderTop: "2px solid oklch(0.65 0.28 340 / 0.4)",
+          boxShadow: "0 -4px 20px oklch(0.65 0.28 340 / 0.15)",
+        }}
+        data-ocid="nav.mobile.section"
+      >
+        {navLinks.map((link) => {
+          const isShop = link.to === "/shop";
+          const isActive = currentPath === link.to;
+          const Icon = link.icon;
+          return (
+            <Link
+              key={link.to}
+              to={link.to}
+              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all"
+              style={{
+                color: isActive
+                  ? isShop
+                    ? "oklch(0.70 0.20 190)"
+                    : "oklch(0.65 0.28 340)"
+                  : isShop
+                    ? "oklch(0.70 0.20 190 / 0.65)"
+                    : "oklch(0.55 0.15 280)",
+                textShadow: isActive
+                  ? isShop
+                    ? "0 0 8px oklch(0.70 0.20 190 / 0.8)"
+                    : "0 0 8px oklch(0.65 0.28 340 / 0.8)"
+                  : "none",
+              }}
+              data-ocid={`nav.mobile.${link.label.toLowerCase()}.link`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-xs font-black tracking-wide">
+                {isShop ? "SHOP ✦" : link.label.toUpperCase()}
+              </span>
+            </Link>
+          );
+        })}
+      </nav>
+
       {/* Body */}
-      <div className="flex flex-1 pt-16">
+      <div className="flex flex-1 pt-16 pb-16 md:pb-0">
         <main className="flex-1 min-w-0">
           <Outlet />
         </main>
@@ -301,7 +375,7 @@ export default function Layout() {
 
       {/* Footer */}
       <footer
-        className="py-8 px-6"
+        className="py-8 px-6 mb-16 md:mb-0"
         style={{
           background: "oklch(0.09 0.012 280)",
           borderTop: "2px solid oklch(0.65 0.28 340 / 0.3)",
