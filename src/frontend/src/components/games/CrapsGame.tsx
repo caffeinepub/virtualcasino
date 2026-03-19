@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { motion } from "motion/react";
+import type React from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
@@ -9,7 +8,6 @@ import { useRecordGameOutcome } from "../../hooks/useQueries";
 type Phase = "bet" | "comeOut" | "point" | "result";
 type BetType = "pass" | "dontPass";
 
-const COLOR = "oklch(0.60 0.24 25)";
 const QUICK_BETS = [5, 10, 25, 50, 100];
 
 const DOT_POSITIONS: Record<number, string[]> = {
@@ -28,30 +26,54 @@ const DOT_POSITIONS: Record<number, string[]> = {
   ],
 };
 
-const POS_CLASSES: Record<string, string> = {
-  "top-left": "top-1 left-1",
-  "top-right": "top-1 right-1",
-  "mid-left": "top-1/2 left-1 -translate-y-1/2",
-  "mid-right": "top-1/2 right-1 -translate-y-1/2",
-  center: "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
-  "bottom-left": "bottom-1 left-1",
-  "bottom-right": "bottom-1 right-1",
+const POS_STYLE: Record<string, React.CSSProperties> = {
+  "top-left": { top: 8, left: 8 },
+  "top-right": { top: 8, right: 8 },
+  "mid-left": { top: "50%", left: 8, transform: "translateY(-50%)" },
+  "mid-right": { top: "50%", right: 8, transform: "translateY(-50%)" },
+  center: { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
+  "bottom-left": { bottom: 8, left: 8 },
+  "bottom-right": { bottom: 8, right: 8 },
 };
 
-function DiceFace({ value }: { value: number }) {
+function RealisticDie({
+  value,
+  rolling = false,
+}: { value: number; rolling?: boolean }) {
   return (
-    <div
-      className="relative w-14 h-14 rounded-lg"
-      style={{ background: "white", border: `2px solid ${COLOR}` }}
+    <motion.div
+      animate={
+        rolling
+          ? { rotate: [0, 90, 180, 270, 360], scale: [1, 1.1, 1] }
+          : { rotate: 0, scale: 1 }
+      }
+      transition={rolling ? { duration: 0.4, repeat: 2 } : { duration: 0.2 }}
+      className="relative"
+      style={{
+        width: 68,
+        height: 68,
+        borderRadius: 12,
+        background: "linear-gradient(135deg, #fff 0%, #f0f0f0 100%)",
+        border: "2px solid #ccc",
+        boxShadow:
+          "0 6px 16px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.9), inset 0 -2px 4px rgba(0,0,0,0.15)",
+      }}
     >
       {(DOT_POSITIONS[value] ?? []).map((pos) => (
         <div
           key={pos}
-          className={`absolute w-2.5 h-2.5 rounded-full ${POS_CLASSES[pos]}`}
-          style={{ background: "#1a1a1a" }}
+          className="absolute"
+          style={{
+            ...POS_STYLE[pos],
+            width: 12,
+            height: 12,
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 35% 35%, #333, #000)",
+            boxShadow: "inset 0 1px 2px rgba(255,255,255,0.2)",
+          }}
         />
       ))}
-    </div>
+    </motion.div>
   );
 }
 
@@ -108,14 +130,12 @@ export default function CrapsGame({
       toast.error("Insufficient credits");
       return;
     }
-
     setRolling(true);
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 800));
     const [d1, d2] = rollDice();
     setDice([d1, d2]);
     setRolling(false);
     setPhase("comeOut");
-
     const total = d1 + d2;
     if (total === 7 || total === 11) {
       if (betType === "pass")
@@ -148,9 +168,7 @@ export default function CrapsGame({
           });
           onGameComplete();
         } catch {}
-      } else {
-        await finishGame(false, "12! Pass Line loses.", -betNum);
-      }
+      } else await finishGame(false, "12! Pass Line loses.", -betNum);
     } else {
       setPoint(total);
       setPhase("point");
@@ -160,11 +178,10 @@ export default function CrapsGame({
 
   const handleRollPoint = async () => {
     setRolling(true);
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 800));
     const [d1, d2] = rollDice();
     setDice([d1, d2]);
     setRolling(false);
-
     const total = d1 + d2;
     if (total === point) {
       if (betType === "pass")
@@ -191,186 +208,311 @@ export default function CrapsGame({
     setNetGain(0);
   };
 
-  const betTypes: BetType[] = ["pass", "dontPass"];
-  const betTypeLabel: Record<BetType, string> = {
-    pass: "Pass Line (1:1)",
-    dontPass: "Don't Pass (1:1)",
-  };
-
   return (
-    <div className="space-y-4">
-      {phase === "bet" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl p-5 space-y-4"
+    <div className="w-full max-w-2xl mx-auto">
+      {/* CRAPS TABLE */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: "#1b5e20",
+          border: "10px solid #3e2208",
+          boxShadow: "0 0 0 3px #8d5524, 0 8px 40px rgba(0,0,0,0.7)",
+        }}
+      >
+        {/* TABLE HEADER */}
+        <div
+          className="px-4 py-2 text-center font-black text-sm tracking-[0.2em]"
           style={{
-            background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${COLOR}40`,
+            background: "#0d3b10",
+            borderBottom: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,215,0,0.8)",
+            textShadow: "0 0 8px rgba(255,215,0,0.4)",
           }}
         >
-          <h3
-            className="font-black text-lg tracking-widest text-center"
-            style={{ color: COLOR }}
-          >
-            PLACE YOUR BET
-          </h3>
+          CRAPS — PASS LINE PAYS EVEN MONEY
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            {betTypes.map((type) => (
-              <button
-                type="button"
-                key={type}
-                onClick={() => setBetType(type)}
-                className="rounded-lg py-3 font-black uppercase tracking-wider text-sm transition-all"
+        {/* BET LAYOUT */}
+        <div className="p-3 space-y-2">
+          {/* PLACE NUMBERS */}
+          <div className="grid grid-cols-6 gap-1">
+            {[4, 5, 6, 8, 9, 10].map((n) => (
+              <div
+                key={n}
+                className="text-center py-2 rounded text-xs font-black text-white"
                 style={{
-                  background: betType === type ? COLOR : "oklch(0.16 0.02 280)",
-                  border: `2px solid ${betType === type ? COLOR : "oklch(0.22 0.03 280)"}`,
-                  color: betType === type ? "white" : "oklch(0.65 0.05 280)",
-                  boxShadow: betType === type ? `0 0 16px ${COLOR}60` : "none",
+                  background: "rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(255,255,255,0.15)",
                 }}
               >
-                {betTypeLabel[type]}
-              </button>
+                <div
+                  style={{
+                    color: n === point ? "#ffd700" : "#fff",
+                    textShadow: n === point ? "0 0 8px #ffd700" : "none",
+                  }}
+                >
+                  {n}
+                </div>
+                <div className="text-[8px] text-white/40">PLACE</div>
+              </div>
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {QUICK_BETS.map((q) => (
-              <button
-                type="button"
-                key={q}
-                onClick={() => setBet(String(q))}
-                className="px-3 py-1 rounded-full text-xs font-black"
-                style={{
-                  background: betNum === q ? COLOR : "oklch(0.16 0.02 280)",
-                  color: betNum === q ? "white" : "oklch(0.65 0.05 280)",
-                  border: `1px solid ${betNum === q ? COLOR : "oklch(0.22 0.03 280)"}`,
-                }}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              min="1"
-              value={bet}
-              onChange={(e) => setBet(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleComeOut}
-              disabled={isPending || rolling}
-              className="font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
+          {/* COME / DONT COME */}
+          <div className="grid grid-cols-2 gap-2">
+            <div
+              className="py-2 rounded text-center text-xs font-black text-white"
+              style={{
+                background: "rgba(0,0,0,0.2)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
             >
-              ROLL!
-            </Button>
+              COME
+            </div>
+            <div
+              className="py-2 rounded text-center text-xs font-black text-white"
+              style={{
+                background: "rgba(0,0,0,0.2)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              DON'T COME
+            </div>
           </div>
-        </motion.div>
-      )}
 
-      {(phase === "comeOut" || phase === "point") && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="rounded-xl p-5 space-y-4"
+          {/* FIELD */}
+          <div
+            className="py-2 rounded text-center"
+            style={{
+              background: "rgba(0,0,0,0.2)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <span className="text-xs font-black text-white tracking-widest">
+              FIELD: 2,3,4,9,10,11,12
+            </span>
+          </div>
+
+          {/* PASS LINE */}
+          <div
+            className="py-3 rounded-lg text-center transition-all"
+            style={{
+              background:
+                betType === "pass" ? "rgba(21,101,192,0.4)" : "rgba(0,0,0,0.3)",
+              border:
+                betType === "pass"
+                  ? "2px solid #1e88e5"
+                  : "1px solid rgba(255,255,255,0.15)",
+              boxShadow:
+                betType === "pass" ? "0 0 16px rgba(30,136,229,0.3)" : "none",
+            }}
+          >
+            <span className="text-sm font-black text-white tracking-[0.15em]">
+              PASS LINE
+            </span>
+          </div>
+
+          {/* DON'T PASS BAR */}
+          <div
+            className="py-2 rounded text-center transition-all"
+            style={{
+              background:
+                betType === "dontPass"
+                  ? "rgba(183,28,28,0.4)"
+                  : "rgba(0,0,0,0.2)",
+              border:
+                betType === "dontPass"
+                  ? "2px solid #ef5350"
+                  : "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <span className="text-xs font-black text-white tracking-widest">
+              DON'T PASS BAR
+            </span>
+          </div>
+        </div>
+
+        {/* DICE AREA */}
+        <div
+          className="mx-4 mb-4 rounded-xl p-4 flex flex-col items-center gap-3"
           style={{
-            background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${COLOR}40`,
+            background: "rgba(0,0,0,0.3)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            backdropFilter: "blur(4px)",
           }}
         >
-          {point !== null && (
+          {point !== null && phase !== "result" && (
             <div className="text-center">
-              <span className="text-xs font-black tracking-wider text-muted-foreground">
+              <span className="text-xs font-black tracking-widest text-white/60">
                 POINT:{" "}
               </span>
-              <span className="text-2xl font-black" style={{ color: COLOR }}>
+              <span
+                className="text-2xl font-black"
+                style={{ color: "#ffd700", textShadow: "0 0 8px #ffd700" }}
+              >
                 {point}
               </span>
             </div>
           )}
 
-          <div className="flex justify-center gap-4">
-            {rolling ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Number.POSITIVE_INFINITY, duration: 0.3 }}
-              >
-                <DiceFace value={Math.ceil(Math.random() * 6)} />
-              </motion.div>
-            ) : (
-              <>
-                <DiceFace value={dice[0]} />
-                <DiceFace value={dice[1]} />
-              </>
-            )}
+          <div className="flex gap-6 justify-center">
+            <RealisticDie value={dice[0]} rolling={rolling} />
+            <RealisticDie value={dice[1]} rolling={rolling} />
           </div>
 
-          <div
-            className="text-center font-black text-2xl"
-            style={{ color: COLOR }}
-          >
-            {rolling ? "Rolling..." : `Total: ${dice[0] + dice[1]}`}
-          </div>
-
-          {phase === "point" && (
-            <Button
-              onClick={handleRollPoint}
-              disabled={rolling || isPending}
-              className="w-full font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
+          {(phase === "comeOut" || phase === "point") && !rolling && (
+            <div
+              className="text-center font-black text-xl"
+              style={{ color: "#ffd700" }}
             >
-              ROLL AGAIN
-            </Button>
+              Total: {dice[0] + dice[1]}
+            </div>
           )}
-        </motion.div>
-      )}
+          {rolling && (
+            <div className="text-center font-black text-sm text-white/60 animate-pulse tracking-widest">
+              ROLLING...
+            </div>
+          )}
+        </div>
 
-      {phase === "result" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-4"
-        >
-          <div className="flex justify-center gap-4">
-            <>
-              <DiceFace value={dice[0]} />
-              <DiceFace value={dice[1]} />
-            </>
-          </div>
-          <div
-            className="rounded-xl p-4 text-center font-black text-lg"
+        {/* RESULT */}
+        {phase === "result" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mx-4 mb-4 rounded-xl p-4 text-center font-black"
             style={{
               background:
                 netGain > 0
-                  ? "oklch(0.78 0.18 72 / 0.15)"
+                  ? "rgba(27,94,32,0.6)"
                   : netGain < 0
-                    ? "oklch(0.577 0.245 27 / 0.15)"
-                    : "oklch(0.16 0.02 280)",
-              color:
-                netGain > 0
-                  ? "oklch(0.78 0.18 72)"
-                  : netGain < 0
-                    ? "oklch(0.577 0.245 27)"
-                    : COLOR,
-              border: `1px solid ${netGain > 0 ? "oklch(0.78 0.18 72 / 0.5)" : netGain < 0 ? "oklch(0.577 0.245 27 / 0.5)" : `${COLOR}40`}`,
+                    ? "rgba(183,28,28,0.5)"
+                    : "rgba(255,255,255,0.1)",
+              border: `1px solid ${netGain > 0 ? "rgba(102,187,106,0.6)" : netGain < 0 ? "rgba(239,83,80,0.6)" : "rgba(255,255,255,0.2)"}`,
+              color: netGain > 0 ? "#a5d6a7" : netGain < 0 ? "#ef9a9a" : "#fff",
             }}
           >
             {resultMsg}
-          </div>
-          <Button
+          </motion.div>
+        )}
+      </div>
+
+      {/* CONTROLS */}
+      <div
+        className="mt-4 rounded-2xl p-5 space-y-4"
+        style={{
+          background: "oklch(0.11 0.015 280)",
+          border: "1px solid oklch(0.20 0.03 280)",
+        }}
+      >
+        {phase === "bet" && (
+          <>
+            <p
+              className="text-xs font-black tracking-widest text-center"
+              style={{ color: "#c8a84b" }}
+            >
+              PLACE YOUR BET
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {(["pass", "dontPass"] as BetType[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setBetType(t)}
+                  className="py-3 rounded-xl font-black uppercase tracking-wider text-sm text-white transition-all"
+                  style={{
+                    background:
+                      betType === t
+                        ? t === "pass"
+                          ? "#1565c0"
+                          : "#b71c1c"
+                        : "oklch(0.16 0.02 280)",
+                    border: `2px solid ${betType === t ? (t === "pass" ? "#1e88e5" : "#ef5350") : "oklch(0.22 0.03 280)"}`,
+                    boxShadow:
+                      betType === t
+                        ? `0 0 16px ${t === "pass" ? "#1e88e560" : "#ef535060"}`
+                        : "none",
+                  }}
+                >
+                  {t === "pass" ? "Pass Line 1:1" : "Don't Pass 1:1"}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 flex-wrap justify-center">
+              {QUICK_BETS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setBet(String(q))}
+                  className="px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+                  style={
+                    betNum === q
+                      ? { background: "#c8a84b", color: "#1a1a1a" }
+                      : {
+                          background: "oklch(0.16 0.02 280)",
+                          color: "#aaa",
+                          border: "1px solid oklch(0.22 0.03 280)",
+                        }
+                  }
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              min="1"
+              value={bet}
+              onChange={(e) => setBet(e.target.value)}
+              className="w-full rounded-lg px-3 py-2 text-center font-bold"
+              style={{
+                background: "oklch(0.09 0.01 280)",
+                color: "#c8a84b",
+                border: "1px solid oklch(0.22 0.03 280)",
+                outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleComeOut}
+              disabled={isPending || rolling}
+              className="w-full py-4 rounded-xl font-black tracking-widest transition-all hover:brightness-110"
+              style={{
+                background: "#c8a84b",
+                color: "#1a1a1a",
+                boxShadow: "0 0 24px rgba(200,168,75,0.4)",
+              }}
+            >
+              🎲 ROLL!
+            </button>
+          </>
+        )}
+        {phase === "point" && (
+          <button
+            type="button"
+            onClick={handleRollPoint}
+            disabled={rolling || isPending}
+            className="w-full py-4 rounded-xl font-black tracking-widest transition-all hover:brightness-110"
+            style={{
+              background: "#c8a84b",
+              color: "#1a1a1a",
+              boxShadow: "0 0 24px rgba(200,168,75,0.4)",
+            }}
+          >
+            🎲 ROLL AGAIN
+          </button>
+        )}
+        {phase === "result" && (
+          <button
+            type="button"
             onClick={reset}
-            className="w-full font-black tracking-widest"
-            style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
+            className="w-full py-4 rounded-xl font-black tracking-widest transition-all hover:brightness-110"
+            style={{ background: "#c8a84b", color: "#1a1a1a" }}
           >
             PLAY AGAIN
-          </Button>
-        </motion.div>
-      )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

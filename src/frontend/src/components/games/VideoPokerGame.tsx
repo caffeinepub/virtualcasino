@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -14,7 +12,6 @@ import {
   isRedSuit,
 } from "./cardUtils";
 
-const COLOR = "oklch(0.78 0.18 72)";
 const QUICK_BETS = [5, 10, 25, 50, 100];
 type Phase = "bet" | "deal" | "result";
 
@@ -32,56 +29,59 @@ function PokerCard({
   index?: number;
 }) {
   const isRed = isRedSuit(card.suit as Suit);
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: -40, rotateX: 90 }}
-      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+      initial={{ opacity: 0, y: -40 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.3 }}
       className="flex flex-col items-center gap-1"
-      style={{ perspective: 600 }}
     >
-      {held && (
-        <motion.span
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-xs font-black tracking-wider"
-          style={{ color: "oklch(0.78 0.18 72)" }}
-        >
-          HELD
-        </motion.span>
-      )}
-      {!held && interactive && (
-        <span className="text-xs font-black tracking-wider text-transparent select-none">
-          HELD
-        </span>
-      )}
+      {/* HELD badge */}
+      <div className="h-5 flex items-center justify-center">
+        {held && (
+          <span
+            className="text-[10px] font-black tracking-wider px-2 py-0.5 rounded"
+            style={{
+              background: "#00e5ff",
+              color: "#000",
+              boxShadow: "0 0 8px #00e5ff",
+            }}
+          >
+            HELD
+          </span>
+        )}
+      </div>
       <button
         type="button"
         onClick={interactive ? onToggle : undefined}
-        className="relative w-16 h-24 rounded-xl flex flex-col justify-between p-2 font-black text-sm shadow-xl transition-all"
+        className="relative rounded-xl flex flex-col justify-between font-black text-sm shadow-xl transition-all"
         style={{
-          background: "white",
-          border: held ? "3px solid oklch(0.78 0.18 72)" : "2px solid #ccc",
+          width: 62,
+          height: 90,
+          padding: 6,
+          background: "#fff",
+          border: held ? "3px solid #00e5ff" : "2px solid #ccc",
           boxShadow: held
-            ? "0 0 16px oklch(0.78 0.18 72 / 0.6)"
-            : "0 4px 12px rgba(0,0,0,0.3)",
-          color: isRed ? "#c0392b" : "#1a1a1a",
-          transform: held ? "translateY(-6px)" : "none",
+            ? "0 0 16px #00e5ff80, 0 4px 12px rgba(0,0,0,0.4)"
+            : "0 4px 12px rgba(0,0,0,0.4)",
+          color: isRed ? "#c62828" : "#1a1a1a",
+          transform: held ? "translateY(-8px)" : "translateY(0)",
           cursor: interactive ? "pointer" : "default",
         }}
-        data-ocid="videopoker.card.toggle"
       >
-        <div className="flex flex-col leading-none">
-          <span style={{ fontSize: 13 }}>{card.rank}</span>
-          <span style={{ fontSize: 13 }}>{card.suit}</span>
+        <div className="flex flex-col leading-none" style={{ fontSize: 12 }}>
+          <span className="font-black">{card.rank}</span>
+          <span>{card.suit}</span>
         </div>
-        <div className="self-center" style={{ fontSize: 22 }}>
+        <div className="self-center" style={{ fontSize: 24 }}>
           {card.suit}
         </div>
-        <div className="flex flex-col leading-none self-end rotate-180">
-          <span style={{ fontSize: 13 }}>{card.rank}</span>
-          <span style={{ fontSize: 13 }}>{card.suit}</span>
+        <div
+          className="flex flex-col leading-none self-end rotate-180"
+          style={{ fontSize: 12 }}
+        >
+          <span className="font-black">{card.rank}</span>
+          <span>{card.suit}</span>
         </div>
       </button>
     </motion.div>
@@ -115,20 +115,17 @@ export default function VideoPokerGame({
       toast.error("Insufficient credits");
       return;
     }
-
     const d = createDeck();
-    const newHand = d.slice(0, 5);
     setDeck(d.slice(5));
-    setHand(newHand);
+    setHand(d.slice(0, 5));
     setHeld([false, false, false, false, false]);
     setHandName("");
     setWinAmount(0);
     setPhase("deal");
   };
 
-  const toggleHold = (i: number) => {
+  const toggleHold = (i: number) =>
     setHeld((prev) => prev.map((h, idx) => (idx === i ? !h : h)));
-  };
 
   const handleDraw = async () => {
     let d = deck;
@@ -140,7 +137,6 @@ export default function VideoPokerGame({
     });
     setDeck(d);
     setHand(newHand);
-
     const hn = evaluatePokerHand(newHand);
     const mult = POKER_PAYOUTS[hn];
     const win = betNum * mult;
@@ -148,7 +144,6 @@ export default function VideoPokerGame({
     setHandName(hn);
     setWinAmount(netGain);
     setPhase("result");
-
     try {
       const won = mult > 0;
       await recordOutcome({
@@ -175,184 +170,245 @@ export default function VideoPokerGame({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2
-          className="font-display font-black text-xl tracking-widest"
-          style={{ color: COLOR, textShadow: `0 0 12px ${COLOR}` }}
+    <div className="w-full max-w-2xl mx-auto">
+      {/* TERMINAL CABINET */}
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: "linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%)",
+          border: "6px solid #2a2a2a",
+          boxShadow:
+            "0 0 0 2px #444, 0 8px 40px rgba(0,0,0,0.8), inset 0 2px 0 rgba(255,255,255,0.05)",
+        }}
+      >
+        {/* TOP HEADER BAR */}
+        <div
+          className="px-4 py-2 flex justify-between items-center"
+          style={{ background: "#0d0d0d", borderBottom: "1px solid #333" }}
         >
-          VIDEO POKER
-        </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">BALANCE</span>
-          <span className="font-black text-gold">{balance.toString()}</span>
+          <span
+            className="font-black text-xs tracking-widest"
+            style={{ color: "#ffd700", textShadow: "0 0 8px #ffd700" }}
+          >
+            VIDEO POKER
+          </span>
+          <span
+            className="font-black text-xs"
+            style={{ color: "#ffd700", fontFamily: "monospace" }}
+          >
+            JACKS OR BETTER
+          </span>
         </div>
-      </div>
 
-      {/* BET PHASE */}
-      {phase === "bet" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-6 space-y-4"
+        {/* SCREEN AREA */}
+        <div
+          className="m-3 rounded-xl p-4"
           style={{
-            background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${COLOR}40`,
+            background: "linear-gradient(180deg, #0a2010 0%, #061808 100%)",
+            border: "3px solid #1a4a1a",
+            boxShadow:
+              "inset 0 0 40px rgba(0,0,0,0.6), 0 0 20px rgba(0,100,0,0.2)",
           }}
         >
-          <p className="text-sm text-muted-foreground font-bold tracking-wider">
-            PLACE YOUR BET
-          </p>
-          <div className="flex gap-2 flex-wrap">
-            {QUICK_BETS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setBet(q.toString())}
-                className="px-3 py-1.5 rounded-lg text-xs font-black transition-all"
-                style={
-                  bet === q.toString()
-                    ? { background: COLOR, color: "#000" }
-                    : {
-                        background: "oklch(0.16 0.025 278)",
-                        color: "oklch(0.60 0.02 270)",
-                        border: "1px solid oklch(0.22 0.03 275)",
-                      }
-                }
-                data-ocid="videopoker.quickbet.button"
-              >
-                {q}
-              </button>
+          {/* CREDIT + WIN METERS */}
+          <div className="flex justify-between mb-3 px-2">
+            {[
+              ["CREDITS", balance.toString().padStart(6, "0"), "#00ff88"],
+              ["BET", String(betNum).padStart(4, "0"), "#ffd700"],
+              [
+                "WIN",
+                winAmount > 0 ? String(winAmount).padStart(4, "0") : "0000",
+                "#ff6600",
+              ],
+            ].map(([label, val, color]) => (
+              <div key={label} className="text-center">
+                <div
+                  className="text-[9px] tracking-widest mb-0.5"
+                  style={{ color: `${color}80`, fontFamily: "monospace" }}
+                >
+                  {label}
+                </div>
+                <div
+                  className="font-black text-sm"
+                  style={{
+                    color,
+                    fontFamily: "monospace",
+                    textShadow: `0 0 8px ${color}`,
+                  }}
+                >
+                  {val}
+                </div>
+              </div>
             ))}
           </div>
-          <Input
-            type="number"
-            min="1"
-            value={bet}
-            onChange={(e) => setBet(e.target.value)}
-            className="bg-secondary border-border text-foreground font-bold"
-            data-ocid="videopoker.bet.input"
-          />
-          <Button
-            onClick={handleDeal}
-            className="w-full py-5 font-black tracking-widest text-black"
-            style={{ background: COLOR, boxShadow: `0 0 20px ${COLOR}50` }}
-            data-ocid="videopoker.deal.button"
-          >
-            🃏 DEAL CARDS
-          </Button>
-        </motion.div>
-      )}
 
-      {/* DEAL / RESULT PHASES */}
-      {(phase === "deal" || phase === "result") && (
-        <div className="space-y-4">
-          {/* Cards */}
-          <div
-            className="rounded-2xl p-6"
-            style={{
-              background:
-                "linear-gradient(180deg, oklch(0.14 0.04 150), oklch(0.10 0.02 160))",
-              border: `2px solid ${COLOR}40`,
-            }}
-          >
-            <div className="flex gap-2 justify-center flex-wrap">
-              <AnimatePresence mode="wait">
-                {hand.map((card, i) => (
-                  <PokerCard
-                    key={`${card.rank}${card.suit}${i}`}
-                    card={card}
-                    held={held[i]}
-                    onToggle={() => toggleHold(i)}
-                    interactive={phase === "deal"}
-                    index={i}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
+          {/* CARDS */}
+          <div className="flex gap-2 justify-center flex-wrap min-h-[110px] items-end">
+            <AnimatePresence mode="wait">
+              {hand.map((card, i) => (
+                <PokerCard
+                  key={`${card.rank}${card.suit}${i}`}
+                  card={card}
+                  held={held[i]}
+                  onToggle={() => toggleHold(i)}
+                  interactive={phase === "deal"}
+                  index={i}
+                />
+              ))}
+            </AnimatePresence>
           </div>
 
-          {/* Result */}
+          {/* HAND RESULT */}
           <AnimatePresence>
             {phase === "result" && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="rounded-xl p-4 text-center"
+                className="mt-3 py-2 rounded-lg text-center font-black tracking-wider text-sm"
                 style={{
                   background:
                     winAmount >= 0
-                      ? "oklch(0.78 0.18 72 / 0.1)"
-                      : "oklch(0.577 0.245 27 / 0.1)",
-                  border: `1px solid ${
-                    winAmount >= 0
-                      ? "oklch(0.78 0.18 72 / 0.5)"
-                      : "oklch(0.577 0.245 27 / 0.5)"
-                  }`,
+                      ? "rgba(0,255,100,0.15)"
+                      : "rgba(255,50,50,0.15)",
+                  border: `1px solid ${winAmount >= 0 ? "rgba(0,255,100,0.4)" : "rgba(255,50,50,0.4)"}`,
+                  color:
+                    winAmount > 0
+                      ? "#00ff88"
+                      : winAmount === 0
+                        ? "#ffd700"
+                        : "#ff5252",
+                  textShadow: winAmount > 0 ? "0 0 10px #00ff88" : "none",
                 }}
-                data-ocid="videopoker.result.panel"
               >
-                <p
-                  className="font-black text-2xl mb-1"
-                  style={{
-                    color:
-                      winAmount > 0
-                        ? "oklch(0.78 0.18 72)"
-                        : winAmount === 0
-                          ? COLOR
-                          : "oklch(0.577 0.245 27)",
-                  }}
-                >
-                  {handName}
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  {winAmount > 0
-                    ? `+${winAmount} credits`
-                    : winAmount === 0
-                      ? "Break even"
-                      : `Lost ${betNum} credits`}
-                </p>
+                {handName}{" "}
+                {winAmount > 0
+                  ? `· +${winAmount} credits`
+                  : winAmount === 0
+                    ? "· Break even"
+                    : `· Lost ${betNum} credits`}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Actions */}
-          <div className="flex gap-2">
-            {phase === "deal" && (
-              <Button
-                onClick={handleDraw}
-                className="flex-1 py-4 font-black tracking-widest text-black"
-                style={{ background: COLOR, boxShadow: `0 0 20px ${COLOR}50` }}
-                data-ocid="videopoker.draw.button"
-              >
-                🃏 DRAW (hold selected)
-              </Button>
-            )}
-            {phase === "result" && (
-              <Button
-                onClick={resetGame}
-                className="flex-1 py-4 font-black tracking-widest text-black"
-                style={{ background: COLOR }}
-                data-ocid="videopoker.play_again.button"
-                disabled={isPending}
-              >
-                PLAY AGAIN
-              </Button>
-            )}
-          </div>
-
           {phase === "deal" && (
-            <p className="text-center text-xs text-muted-foreground">
-              Click cards to hold them, then click DRAW
+            <p
+              className="text-center text-xs mt-2"
+              style={{ color: "rgba(0,255,136,0.5)" }}
+            >
+              Tap cards to HOLD them
             </p>
           )}
         </div>
-      )}
 
-      {/* Paytable */}
+        {/* HOLD BUTTONS ROW */}
+        {(phase === "deal" || phase === "result") && hand.length > 0 && (
+          <div className="flex gap-2 justify-center px-3 pb-1">
+            {hand.map((_, i) => (
+              <button
+                // biome-ignore lint/suspicious/noArrayIndexKey: fixed hand positions
+                key={`hold-${i}`}
+                type="button"
+                onClick={() => phase === "deal" && toggleHold(i)}
+                className="flex-1 py-1.5 rounded text-xs font-black tracking-wider transition-all"
+                style={{
+                  background: held[i] ? "#00e5ff" : "#1a1a1a",
+                  color: held[i] ? "#000" : "#555",
+                  border: `1px solid ${held[i] ? "#00e5ff" : "#333"}`,
+                  boxShadow: held[i] ? "0 0 8px #00e5ff60" : "none",
+                  cursor: phase === "deal" ? "pointer" : "default",
+                }}
+              >
+                HOLD
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ACTION BUTTONS */}
+        <div className="p-3 space-y-2">
+          {phase === "bet" && (
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap justify-center">
+                {QUICK_BETS.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setBet(q.toString())}
+                    className="px-3 py-1.5 rounded text-xs font-black transition-all"
+                    style={
+                      bet === q.toString()
+                        ? { background: "#ffd700", color: "#000" }
+                        : {
+                            background: "#1a1a1a",
+                            color: "#666",
+                            border: "1px solid #333",
+                          }
+                    }
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min="1"
+                value={bet}
+                onChange={(e) => setBet(e.target.value)}
+                className="w-full rounded px-3 py-2 text-center font-bold"
+                style={{
+                  background: "#0a0a0a",
+                  color: "#ffd700",
+                  border: "2px solid #333",
+                  fontFamily: "monospace",
+                  outline: "none",
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleDeal}
+                className="w-full py-3 rounded-xl font-black tracking-widest text-black text-sm transition-all hover:brightness-110"
+                style={{
+                  background: "linear-gradient(180deg, #ffd700, #f5a623)",
+                  boxShadow: "0 4px 0 #b8860b, 0 0 20px rgba(255,215,0,0.3)",
+                }}
+              >
+                🃏 DEAL CARDS
+              </button>
+            </div>
+          )}
+          {phase === "deal" && (
+            <button
+              type="button"
+              onClick={handleDraw}
+              className="w-full py-3 rounded-xl font-black tracking-widest text-black text-sm transition-all hover:brightness-110"
+              style={{
+                background: "linear-gradient(180deg, #ffd700, #f5a623)",
+                boxShadow: "0 4px 0 #b8860b, 0 0 20px rgba(255,215,0,0.3)",
+              }}
+            >
+              🃏 DRAW CARDS
+            </button>
+          )}
+          {phase === "result" && (
+            <button
+              type="button"
+              onClick={resetGame}
+              disabled={isPending}
+              className="w-full py-3 rounded-xl font-black tracking-widest text-black text-sm transition-all hover:brightness-110"
+              style={{
+                background: "linear-gradient(180deg, #ffd700, #f5a623)",
+                boxShadow: "0 4px 0 #b8860b",
+              }}
+            >
+              DEAL AGAIN
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* PAYTABLE */}
       <div
-        className="rounded-xl p-3"
+        className="mt-4 rounded-xl p-3"
         style={{
           background: "oklch(0.10 0.012 280)",
           border: "1px solid oklch(0.16 0.02 280)",
@@ -363,18 +419,14 @@ export default function VideoPokerGame({
         </p>
         <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
           {(Object.entries(POKER_PAYOUTS) as [string, number][]).map(
-            ([hand, mult]) => (
-              <div key={hand} className="flex justify-between">
-                <span className="text-muted-foreground">{hand}</span>
+            ([hn, mult]) => (
+              <div key={hn} className="flex justify-between">
+                <span className="text-muted-foreground">{hn}</span>
                 <span
                   className="font-black"
                   style={{
                     color:
-                      mult >= 25
-                        ? "oklch(0.78 0.18 72)"
-                        : mult > 0
-                          ? COLOR
-                          : "oklch(0.45 0.02 270)",
+                      mult >= 25 ? "#ffd700" : mult > 0 ? "#00e5ff" : "#444",
                   }}
                 >
                   {mult > 0 ? `${mult}×` : "—"}

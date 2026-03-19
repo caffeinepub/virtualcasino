@@ -15,6 +15,35 @@ type Phase =
   | "cashedout"
   | "result";
 
+function Starfield() {
+  const stars = Array.from({ length: 60 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 2 + 1,
+    opacity: Math.random() * 0.7 + 0.3,
+  }));
+  return (
+    <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+      {stars.map((s) => (
+        <div
+          key={s.id}
+          style={{
+            position: "absolute",
+            left: `${s.x}%`,
+            top: `${s.y}%`,
+            width: s.size,
+            height: s.size,
+            borderRadius: "50%",
+            background: "#fff",
+            opacity: s.opacity,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function CrashGame({
   balance,
   onGameComplete,
@@ -26,6 +55,7 @@ export default function CrashGame({
   const [countdown, setCountdown] = useState(3);
   const [won, setWon] = useState(false);
   const [winAmount, setWinAmount] = useState(0);
+  const [rocketY, setRocketY] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const multRef = useRef(1.0);
   const crashRef = useRef(2.0);
@@ -59,6 +89,7 @@ export default function CrashGame({
     crashRef.current = crash;
     setMultiplier(1.0);
     multRef.current = 1.0;
+    setRocketY(0);
     setCountdown(3);
     setPhase("countdown");
     let cd = 3;
@@ -70,7 +101,9 @@ export default function CrashGame({
         setPhase("running");
         intervalRef.current = setInterval(() => {
           multRef.current = multRef.current * 1.06;
-          setMultiplier(Math.round(multRef.current * 100) / 100);
+          const m = Math.round(multRef.current * 100) / 100;
+          setMultiplier(m);
+          setRocketY(Math.min(85, (m - 1) * 12));
           if (multRef.current >= crashRef.current) {
             clearInt();
             setPhase("crashed");
@@ -120,188 +153,259 @@ export default function CrashGame({
   };
 
   const multColor =
-    multiplier >= 3
-      ? "oklch(0.78 0.18 72)"
-      : multiplier >= 2
-        ? "oklch(0.68 0.22 150)"
-        : COLOR;
+    multiplier >= 3 ? "#ffd700" : multiplier >= 2 ? "#44ff88" : "#ff6644";
 
   return (
     <div
-      className="rounded-2xl p-6"
+      className="rounded-2xl overflow-hidden"
       style={{
-        background: "oklch(0.11 0.015 280)",
-        border: `1px solid ${COLOR}40`,
+        background: "#050510",
+        border: "2px solid #1a1a3a",
+        boxShadow: "0 0 40px rgba(0,0,0,0.9)",
       }}
     >
-      <h2
-        className="text-2xl font-black tracking-widest mb-2"
-        style={{ color: COLOR }}
+      {/* Header */}
+      <div
+        style={{
+          background: "linear-gradient(180deg, #0a0020, #050010)",
+          padding: "12px 24px",
+          borderBottom: "2px solid #1a0a3a",
+          textAlign: "center",
+        }}
       >
-        🚀 CRASH GAME
-      </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        Cash out before the rocket crashes!
-      </p>
+        <h2
+          className="text-2xl font-black tracking-widest"
+          style={{
+            color: "#ff4422",
+            textShadow: "0 0 10px #ff2200, 0 0 30px #ff4400",
+          }}
+        >
+          🚀 CRASH GAME
+        </h2>
+      </div>
 
-      {phase === "bet" && (
-        <div className="space-y-4">
-          <div className="flex gap-2 flex-wrap">
-            {QUICK_BETS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setBet(q.toString())}
-                className="px-4 py-2 rounded-lg text-xs font-black"
-                style={
-                  bet === q.toString()
-                    ? { background: COLOR, color: "#fff" }
-                    : {
-                        background: "oklch(0.16 0.025 278)",
-                        color: "oklch(0.60 0.02 270)",
-                        border: "1px solid oklch(0.22 0.03 275)",
-                      }
-                }
-                data-ocid="crash.quickbet.button"
-              >
-                {q}
-              </button>
-            ))}
+      <div className="p-6">
+        <p className="text-sm text-center mb-4" style={{ color: "#888" }}>
+          Cash out before the rocket crashes!
+        </p>
+
+        {phase === "bet" && (
+          <div className="space-y-4">
+            <div className="flex gap-2 flex-wrap">
+              {QUICK_BETS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setBet(q.toString())}
+                  className="px-4 py-2 rounded-lg text-xs font-black"
+                  style={
+                    bet === q.toString()
+                      ? { background: COLOR, color: "#fff" }
+                      : {
+                          background: "rgba(255,255,255,0.05)",
+                          color: "#aaa",
+                          border: "1px solid #333",
+                        }
+                  }
+                  data-ocid="crash.quickbet.button"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              min="1"
+              value={bet}
+              onChange={(e) => setBet(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-lg font-bold bg-secondary border border-border text-foreground"
+              data-ocid="crash.bet.input"
+            />
+            <Button
+              onClick={startGame}
+              className="w-full py-6 font-black tracking-widest"
+              style={{
+                background: `linear-gradient(135deg, ${COLOR}, oklch(0.65 0.22 55))`,
+                color: "#fff",
+                boxShadow: `0 0 20px ${COLOR}40`,
+              }}
+              data-ocid="crash.play_button"
+            >
+              🚀 LAUNCH FOR {bet} CREDITS
+            </Button>
           </div>
-          <input
-            type="number"
-            min="1"
-            value={bet}
-            onChange={(e) => setBet(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-lg font-bold bg-secondary border border-border text-foreground"
-            data-ocid="crash.bet.input"
-          />
-          <Button
-            onClick={startGame}
-            className="w-full py-6 font-black tracking-widest"
-            style={{
-              background: `linear-gradient(135deg, ${COLOR}, oklch(0.65 0.22 55))`,
-              color: "#fff",
-              boxShadow: `0 0 20px ${COLOR}40`,
-            }}
-            data-ocid="crash.play_button"
-          >
-            🚀 LAUNCH FOR {bet} CREDITS
-          </Button>
-        </div>
-      )}
+        )}
 
-      {(phase === "countdown" ||
-        phase === "running" ||
-        phase === "crashed" ||
-        phase === "cashedout") && (
-        <div className="space-y-6">
-          <div
-            className="flex flex-col items-center justify-center py-8 rounded-2xl"
-            style={{
-              background: "oklch(0.08 0.01 280)",
-              border: `2px solid ${phase === "crashed" ? "oklch(0.577 0.245 27)" : phase === "cashedout" ? "oklch(0.78 0.18 72)" : multColor}60`,
-            }}
-          >
-            {phase === "countdown" ? (
-              <>
-                <div className="text-6xl font-black text-white">
-                  {countdown}
-                </div>
-                <p className="text-muted-foreground mt-2">Get ready...</p>
-              </>
-            ) : phase === "crashed" ? (
-              <>
-                <div className="text-5xl">💥</div>
-                <div
-                  className="text-3xl font-black mt-2"
-                  style={{ color: "oklch(0.577 0.245 27)" }}
-                >
-                  CRASHED!
-                </div>
-                <div className="text-xl font-bold text-muted-foreground">
-                  at {multiplier.toFixed(2)}x
-                </div>
-              </>
-            ) : phase === "cashedout" ? (
-              <>
-                <div className="text-5xl">💰</div>
-                <div
-                  className="text-3xl font-black mt-2"
-                  style={{ color: "oklch(0.78 0.18 72)" }}
-                >
-                  CASHED OUT!
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="text-xl text-muted-foreground mb-2">
-                  🚀 Flying...
-                </div>
-                <motion.div
-                  key={Math.floor(multiplier * 10)}
-                  initial={{ scale: 1.2 }}
-                  animate={{ scale: 1 }}
-                  className="text-6xl font-black tabular-nums"
+        {(phase === "countdown" ||
+          phase === "running" ||
+          phase === "crashed" ||
+          phase === "cashedout") && (
+          <div className="space-y-6">
+            {/* Space viewport */}
+            <div
+              className="relative rounded-2xl overflow-hidden"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center bottom, #0a0a2e 0%, #020208 70%)",
+                border: `2px solid ${phase === "crashed" ? "#ff2200" : phase === "cashedout" ? "#44ff88" : multColor}44`,
+                height: 240,
+              }}
+            >
+              <Starfield />
+              {/* Graph line */}
+              {phase === "running" && (
+                <svg
+                  aria-hidden="true"
                   style={{
-                    color: multColor,
-                    textShadow: `0 0 20px ${multColor}`,
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
                   }}
                 >
-                  {multiplier.toFixed(2)}x
+                  <defs>
+                    <linearGradient id="graphGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#44ff88" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#44ff88" stopOpacity="1" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={`M 0 ${240} Q ${200} ${240 - rocketY * 2} ${300} ${240 - rocketY * 2.5}`}
+                    fill="none"
+                    stroke="url(#graphGrad)"
+                    strokeWidth="2"
+                  />
+                </svg>
+              )}
+              {/* Rocket */}
+              {(phase === "running" || phase === "countdown") && (
+                <motion.div
+                  animate={{ bottom: `${rocketY + 10}%`, right: "20%" }}
+                  style={{ position: "absolute", fontSize: 32 }}
+                >
+                  🚀
                 </motion.div>
-              </>
+              )}
+              {/* Center display */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {phase === "countdown" ? (
+                  <>
+                    <div className="text-6xl font-black text-white">
+                      {countdown}
+                    </div>
+                    <p style={{ color: "#888" }}>Get ready...</p>
+                  </>
+                ) : phase === "crashed" ? (
+                  <>
+                    <motion.div
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: [0.5, 2, 1], opacity: 1 }}
+                      transition={{ duration: 0.5 }}
+                      style={{ fontSize: 60 }}
+                    >
+                      💥
+                    </motion.div>
+                    <div
+                      className="text-3xl font-black"
+                      style={{
+                        color: "#ff2200",
+                        textShadow: "0 0 20px #ff2200",
+                      }}
+                    >
+                      CRASHED!
+                    </div>
+                    <div
+                      className="text-xl font-bold"
+                      style={{ color: "#888" }}
+                    >
+                      at {multiplier.toFixed(2)}x
+                    </div>
+                  </>
+                ) : phase === "cashedout" ? (
+                  <>
+                    <div style={{ fontSize: 48 }}>💰</div>
+                    <div
+                      className="text-3xl font-black"
+                      style={{ color: "#44ff88" }}
+                    >
+                      CASHED OUT!
+                    </div>
+                  </>
+                ) : (
+                  <motion.div
+                    key={Math.floor(multiplier * 10)}
+                    initial={{ scale: 1.2 }}
+                    animate={{ scale: 1 }}
+                    className="text-6xl font-black tabular-nums"
+                    style={{
+                      color: multColor,
+                      textShadow: `0 0 20px ${multColor}`,
+                      fontFamily: "monospace",
+                    }}
+                  >
+                    {multiplier.toFixed(2)}x
+                  </motion.div>
+                )}
+              </div>
+            </div>
+            {phase === "running" && (
+              <Button
+                onClick={cashOut}
+                className="w-full py-6 font-black tracking-widest text-xl"
+                style={{
+                  background: "linear-gradient(135deg, #44ff88, #22cc66)",
+                  color: "#000",
+                  boxShadow: "0 0 30px rgba(68,255,136,0.6)",
+                }}
+                data-ocid="crash.cashout_button"
+              >
+                💰 CASH OUT {multiplier.toFixed(2)}x
+              </Button>
             )}
           </div>
-          {phase === "running" && (
-            <Button
-              onClick={cashOut}
-              className="w-full py-6 font-black tracking-widest text-xl"
-              style={{
-                background: "oklch(0.78 0.18 72)",
-                color: "#000",
-                boxShadow: "0 0 30px oklch(0.78 0.18 72 / 0.6)",
-              }}
-              data-ocid="crash.cashout_button"
-            >
-              💰 CASH OUT {multiplier.toFixed(2)}x
-            </Button>
-          )}
-        </div>
-      )}
+        )}
 
-      {phase === "result" && (
-        <AnimatePresence>
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-center space-y-4 py-6"
-          >
-            <div className="text-6xl">{won ? "💰" : "💥"}</div>
-            <h3
-              className="text-2xl font-black"
-              style={{
-                color: won ? "oklch(0.78 0.18 72)" : "oklch(0.577 0.245 27)",
-              }}
+        {phase === "result" && (
+          <AnimatePresence>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-center space-y-4 py-6"
             >
-              {won
-                ? `+${winAmount} CREDITS at ${cashOutMult.toFixed(2)}x!`
-                : "CRASHED! You lost."}
-            </h3>
-            <Button
-              onClick={() => {
-                setPhase("bet");
-                setMultiplier(1.0);
-              }}
-              className="font-black"
-              style={{ background: COLOR, color: "#fff" }}
-              data-ocid="crash.play_again_button"
-            >
-              LAUNCH AGAIN
-            </Button>
-          </motion.div>
-        </AnimatePresence>
-      )}
+              <div className="text-6xl">{won ? "💰" : "💥"}</div>
+              <h3
+                className="text-2xl font-black"
+                style={{ color: won ? "#ffd700" : "#ff2200" }}
+              >
+                {won
+                  ? `+${winAmount} CREDITS at ${cashOutMult.toFixed(2)}x!`
+                  : "CRASHED! You lost."}
+              </h3>
+              <Button
+                onClick={() => {
+                  setPhase("bet");
+                  setMultiplier(1.0);
+                  setRocketY(0);
+                }}
+                className="font-black"
+                style={{ background: COLOR, color: "#fff" }}
+                data-ocid="crash.play_again_button"
+              >
+                LAUNCH AGAIN
+              </Button>
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
     </div>
   );
 }

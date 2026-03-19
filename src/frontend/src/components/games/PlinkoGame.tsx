@@ -16,6 +16,37 @@ interface BallStep {
   col: number;
 }
 
+const BUCKET_COLORS: Record<
+  number,
+  { bg: string; glow: string; label: string }
+> = {
+  0.2: {
+    bg: "linear-gradient(180deg, #555, #333)",
+    glow: "#888",
+    label: "grey",
+  },
+  0.5: {
+    bg: "linear-gradient(180deg, #1a5a8a, #0d3a5a)",
+    glow: "#4af",
+    label: "blue",
+  },
+  1: {
+    bg: "linear-gradient(180deg, #1a6a2a, #0d4a1a)",
+    glow: "#4f8",
+    label: "green",
+  },
+  2: {
+    bg: "linear-gradient(180deg, #8a6a00, #5a4400)",
+    glow: "#fd0",
+    label: "yellow",
+  },
+  5: {
+    bg: "linear-gradient(180deg, #8a1a00, #5a0d00)",
+    glow: "#f44",
+    label: "red",
+  },
+};
+
 export default function PlinkoGame({
   balance,
   onGameComplete,
@@ -41,8 +72,6 @@ export default function PlinkoGame({
       toast.error("Insufficient credits");
       return;
     }
-
-    // Build path: start at col 4 (center of 0-8), each row go left/right
     const path: BallStep[] = [{ row: -1, col: 4 }];
     let col = 4;
     for (let r = 0; r < ROWS; r++) {
@@ -52,7 +81,6 @@ export default function PlinkoGame({
     setBallPath(path);
     setCurrentStep(0);
     setPhase("playing");
-
     let step = 0;
     const animate = () => {
       step++;
@@ -92,177 +120,219 @@ export default function PlinkoGame({
 
   return (
     <div
-      className="rounded-2xl p-6"
+      className="rounded-2xl overflow-hidden"
       style={{
-        background: "oklch(0.11 0.015 280)",
-        border: `1px solid ${COLOR}40`,
+        background: "linear-gradient(180deg, #1a0a0a 0%, #0d0505 100%)",
+        border: "4px solid #4a2a1a",
+        boxShadow: "0 0 40px rgba(0,0,0,0.9)",
       }}
     >
-      <h2
-        className="text-2xl font-black tracking-widest mb-2"
-        style={{ color: COLOR }}
+      {/* Header */}
+      <div
+        style={{
+          background: "linear-gradient(180deg, #2a1000, #1a0800)",
+          padding: "12px 24px",
+          borderBottom: "2px solid #5a3a1a",
+          textAlign: "center",
+        }}
       >
-        📍 PLINKO
-      </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        Drop the ball and watch it bounce!
-      </p>
+        <h2
+          className="text-2xl font-black tracking-widest"
+          style={{
+            color: "#ff6688",
+            textShadow: "0 0 10px #ff3366, 0 0 30px #ff0044",
+          }}
+        >
+          📍 PLINKO
+        </h2>
+      </div>
 
-      {phase === "bet" && (
-        <div className="space-y-4">
-          <div className="flex gap-2 flex-wrap">
-            {QUICK_BETS.map((q) => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setBet(q.toString())}
-                className="px-4 py-2 rounded-lg text-xs font-black"
-                style={
-                  bet === q.toString()
-                    ? {
-                        background: COLOR,
-                        color: "#fff",
-                        boxShadow: `0 0 12px ${COLOR}60`,
-                      }
-                    : {
-                        background: "oklch(0.16 0.025 278)",
-                        color: "oklch(0.60 0.02 270)",
-                        border: "1px solid oklch(0.22 0.03 275)",
-                      }
-                }
-                data-ocid="plinko.quickbet.button"
-              >
-                {q}
-              </button>
-            ))}
+      <div className="p-6">
+        <p className="text-sm text-center mb-4" style={{ color: "#aaa" }}>
+          Drop the ball and watch it bounce!
+        </p>
+
+        {phase === "bet" && (
+          <div className="space-y-4">
+            <div className="flex gap-2 flex-wrap">
+              {QUICK_BETS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setBet(q.toString())}
+                  className="px-4 py-2 rounded-lg text-xs font-black"
+                  style={
+                    bet === q.toString()
+                      ? {
+                          background: COLOR,
+                          color: "#fff",
+                          boxShadow: `0 0 12px ${COLOR}60`,
+                        }
+                      : {
+                          background: "rgba(255,255,255,0.05)",
+                          color: "#aaa",
+                          border: "1px solid #333",
+                        }
+                  }
+                  data-ocid="plinko.quickbet.button"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              min="1"
+              value={bet}
+              onChange={(e) => setBet(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl text-lg font-bold bg-secondary border border-border text-foreground"
+              data-ocid="plinko.bet.input"
+            />
+            <Button
+              onClick={handleDrop}
+              className="w-full py-6 font-black tracking-widest"
+              style={{
+                background: `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.25 290))`,
+                color: "#fff",
+                boxShadow: `0 0 20px ${COLOR}40`,
+              }}
+              data-ocid="plinko.drop_button"
+            >
+              📍 DROP FOR {bet} CREDITS
+            </Button>
           </div>
-          <input
-            type="number"
-            min="1"
-            value={bet}
-            onChange={(e) => setBet(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-lg font-bold bg-secondary border border-border text-foreground"
-            data-ocid="plinko.bet.input"
-          />
-          <Button
-            onClick={handleDrop}
-            className="w-full py-6 font-black tracking-widest"
-            style={{
-              background: `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.25 290))`,
-              color: "#fff",
-              boxShadow: `0 0 20px ${COLOR}40`,
-            }}
-            data-ocid="plinko.drop_button"
-          >
-            📍 DROP FOR {bet} CREDITS
-          </Button>
-        </div>
-      )}
+        )}
 
-      {phase === "playing" && (
-        <div className="space-y-2">
-          <div className="relative mx-auto" style={{ width: 300, height: 260 }}>
-            {/* Pegs */}
-            {Array.from({ length: ROWS }, (_, r) =>
-              Array.from({ length: r + 3 }, (_, c) => {
-                const totalPegs = r + 3;
-                const x = ((c + (9 - totalPegs) / 2) / 9) * 300;
-                const y = (r + 1) * 30 + 10;
-                return (
-                  <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: stable static list
-                    key={`peg-${r}-${c}`}
-                    className="absolute w-3 h-3 rounded-full"
+        {phase === "playing" && (
+          <div className="space-y-3">
+            {/* Wooden-frame board */}
+            <div
+              style={{
+                background: "linear-gradient(180deg, #1a0a2e 0%, #0d0520 100%)",
+                border: "6px solid #5a3010",
+                borderRadius: 8,
+                boxShadow:
+                  "inset 0 0 30px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6)",
+                padding: 8,
+                position: "relative",
+              }}
+            >
+              <div
+                className="relative mx-auto"
+                style={{ width: 300, height: 240 }}
+              >
+                {/* Pegs */}
+                {Array.from({ length: ROWS }, (_, r) =>
+                  Array.from({ length: r + 3 }, (_, c) => {
+                    const totalPegs = r + 3;
+                    const x = ((c + (9 - totalPegs) / 2) / 9) * 300;
+                    const y = (r + 1) * 30 + 10;
+                    return (
+                      <div
+                        // biome-ignore lint/suspicious/noArrayIndexKey: stable static list
+                        key={`peg-${r}-${c}`}
+                        className="absolute rounded-full"
+                        style={{
+                          left: x - 7,
+                          top: y - 7,
+                          width: 14,
+                          height: 14,
+                          background:
+                            "radial-gradient(circle at 35% 30%, #ffffff, #c0c0c0 40%, #808080 70%, #404040)",
+                          boxShadow:
+                            "0 2px 4px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.6)",
+                        }}
+                      />
+                    );
+                  }),
+                )}
+                {/* Ball */}
+                {ballPos && (
+                  <motion.div
+                    key={currentStep}
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute z-10 rounded-full"
                     style={{
-                      left: x - 6,
-                      top: y - 6,
-                      background: "oklch(0.55 0.20 290)",
-                      boxShadow: "0 0 4px oklch(0.55 0.20 290)",
+                      left: (ballPos.col / 9) * 300 - 10,
+                      top: ballPos.row === -1 ? 0 : (ballPos.row + 1) * 30 + 4,
+                      width: 20,
+                      height: 20,
+                      background:
+                        "radial-gradient(circle at 35% 30%, #ffe566, #ff9900 50%, #cc6600)",
+                      boxShadow:
+                        "0 0 10px rgba(255,180,0,0.8), 0 2px 6px rgba(0,0,0,0.5)",
                     }}
                   />
-                );
-              }),
-            )}
-            {/* Ball */}
-            {ballPos && (
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute w-5 h-5 rounded-full z-10"
-                style={{
-                  left: (ballPos.col / 9) * 300 - 10,
-                  top: ballPos.row === -1 ? 0 : (ballPos.row + 1) * 30 + 4,
-                  background: "oklch(0.88 0.20 72)",
-                  boxShadow: "0 0 8px oklch(0.88 0.20 72)",
-                }}
-              />
-            )}
-          </div>
-          {/* Slots */}
-          <div className="flex gap-1 justify-center">
-            {MULTIPLIERS.map((m, i) => (
-              <div
-                // biome-ignore lint/suspicious/noArrayIndexKey: stable static list
-                key={`pmult-${i}`}
-                className="flex-1 text-center text-xs font-black py-2 rounded"
-                style={{
-                  background: finalSlot === i ? COLOR : "oklch(0.16 0.025 278)",
-                  color:
-                    finalSlot === i
-                      ? "#fff"
-                      : m >= 2
-                        ? COLOR
-                        : "oklch(0.60 0.02 270)",
-                  boxShadow: finalSlot === i ? `0 0 10px ${COLOR}` : "none",
-                }}
-              >
-                {m}x
+                )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {phase === "result" && (
-        <AnimatePresence>
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-center space-y-4 py-6"
-          >
-            <div className="text-6xl">{won ? "🎉" : "😔"}</div>
-            <div className="text-lg font-black text-muted-foreground">
-              {multiplier}x multiplier
+              {/* Prize buckets */}
+              <div className="flex gap-1 px-1">
+                {MULTIPLIERS.map((m, i) => {
+                  const bkt = BUCKET_COLORS[m] ?? BUCKET_COLORS[0.2];
+                  return (
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: stable static list
+                      key={`pmult-${i}`}
+                      className="flex-1 text-center text-xs font-black py-2 rounded-b-md"
+                      style={{
+                        background:
+                          finalSlot === i ? bkt.bg : "rgba(0,0,0,0.5)",
+                        color: finalSlot === i ? "#fff" : bkt.glow,
+                        border: `1px solid ${bkt.glow}44`,
+                        borderTop: `3px solid ${bkt.glow}`,
+                        boxShadow:
+                          finalSlot === i ? `0 0 12px ${bkt.glow}` : "none",
+                        transition: "all 0.3s",
+                      }}
+                    >
+                      {m}x
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <h3
-              className="text-2xl font-black"
-              style={{
-                color: won ? "oklch(0.78 0.18 72)" : "oklch(0.577 0.245 27)",
-              }}
+          </div>
+        )}
+
+        {phase === "result" && (
+          <AnimatePresence>
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-center space-y-4 py-6"
             >
-              {won
-                ? `+${winAmount} CREDITS!`
-                : winAmount > 0
-                  ? `+${winAmount} (partial)`
-                  : "ZERO PAYOUT"}
-            </h3>
-            <Button
-              onClick={() => {
-                setPhase("bet");
-                setBallPath([]);
-                setCurrentStep(0);
-                setFinalSlot(null);
-              }}
-              className="font-black"
-              style={{ background: COLOR, color: "#fff" }}
-              data-ocid="plinko.play_again_button"
-            >
-              DROP AGAIN
-            </Button>
-          </motion.div>
-        </AnimatePresence>
-      )}
+              <div className="text-6xl">{won ? "🎉" : "😔"}</div>
+              <div className="text-lg font-black" style={{ color: "#aaa" }}>
+                {multiplier}x multiplier
+              </div>
+              <h3
+                className="text-2xl font-black"
+                style={{ color: won ? "#ffd700" : "#e55" }}
+              >
+                {won
+                  ? `+${winAmount} CREDITS!`
+                  : winAmount > 0
+                    ? `+${winAmount} (partial)`
+                    : "ZERO PAYOUT"}
+              </h3>
+              <Button
+                onClick={() => {
+                  setPhase("bet");
+                  setBallPath([]);
+                  setCurrentStep(0);
+                  setFinalSlot(null);
+                }}
+                className="font-black"
+                style={{ background: COLOR, color: "#fff" }}
+                data-ocid="plinko.play_again_button"
+              >
+                DROP AGAIN
+              </Button>
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </div>
     </div>
   );
 }

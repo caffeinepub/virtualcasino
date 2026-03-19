@@ -1,93 +1,47 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
 import { useRecordGameOutcome } from "../../hooks/useQueries";
-import {
-  type Card,
-  type Suit,
-  createDeck,
-  isRedSuit,
-  rankNumericValue,
-} from "./cardUtils";
+import { RealisticCard } from "./RealisticCard";
+import { type Card, createDeck, rankNumericValue } from "./cardUtils";
 
-type Phase = "bet" | "reveal" | "war" | "result";
+type Phase = "bet" | "result";
 
-const COLOR = "oklch(0.60 0.24 20)";
 const QUICK_BETS = [5, 10, 25, 50, 100];
+const COLOR = "oklch(0.72 0.22 30)";
+const GOLD = "rgba(255,215,0,0.8)";
 
-function WarCard({ card, index = 0 }: { card: Card; index?: number }) {
-  const isRed = isRedSuit(card.suit as Suit);
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.7, rotateY: 90 }}
-      animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-      transition={{ delay: index * 0.2, duration: 0.35 }}
-      className="w-14 h-20 rounded-lg flex flex-col justify-between p-1.5 font-black text-sm shadow-xl select-none"
-      style={{
-        background: "white",
-        border: `2px solid ${COLOR}`,
-        color: isRed ? "#c0392b" : "#1a1a1a",
-        boxShadow: `0 0 16px ${COLOR}60`,
-      }}
-    >
-      <div className="flex flex-col leading-none">
-        <span>{card.rank}</span>
-        <span>{card.suit}</span>
-      </div>
-      <div className="self-center text-lg">{card.suit}</div>
-      <div className="flex flex-col leading-none self-end rotate-180">
-        <span>{card.rank}</span>
-        <span>{card.suit}</span>
-      </div>
-    </motion.div>
-  );
-}
+const FELT_STYLE = {
+  background:
+    "radial-gradient(ellipse at 50% 30%, #1f6b35 0%, #0f3d1c 55%, #071b0c 100%)",
+};
+const WOOD_STYLE = {
+  background:
+    "linear-gradient(135deg, #5D3A1A 0%, #8B5E3C 30%, #6B3C1E 60%, #8B5E3C 80%, #5D3A1A 100%)",
+  padding: "10px",
+  borderRadius: "24px",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
+};
 
 export default function WarGame({
   balance,
   onGameComplete,
-}: {
-  balance: bigint;
-  onGameComplete: () => void;
-}) {
+}: { balance: bigint; onGameComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>("bet");
   const [bet, setBet] = useState("10");
   const [playerCard, setPlayerCard] = useState<Card | null>(null);
   const [dealerCard, setDealerCard] = useState<Card | null>(null);
-  const [warPlayerCard, setWarPlayerCard] = useState<Card | null>(null);
-  const [warDealerCard, setWarDealerCard] = useState<Card | null>(null);
-  const [netGain, setNetGain] = useState(0);
   const [resultMsg, setResultMsg] = useState("");
-  const [deck, setDeck] = useState<Card[]>([]);
+  const [netGain, setNetGain] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const { mutateAsync: recordOutcome, isPending } = useRecordGameOutcome();
   const betNum = Number.parseInt(bet, 10) || 0;
 
-  const finishGame = async (won: boolean, msg: string, gain: number) => {
-    setResultMsg(msg);
-    setNetGain(gain);
-    setPhase("result");
-    try {
-      const winAmount = won ? BigInt(Math.abs(gain) + betNum) : BigInt(0);
-      await recordOutcome({
-        gameType: GameType.war,
-        bet: BigInt(betNum),
-        won,
-        winAmount,
-      });
-      onGameComplete();
-      if (won) toast.success(`🎉 ${msg}`);
-      else if (gain === 0) toast(msg);
-      else toast.error(msg);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Error recording game");
-    }
-  };
-
-  const handleDraw = () => {
+  const handleDeal = async () => {
     if (betNum < 1) {
       toast.error("Minimum bet is 1 credit");
       return;
@@ -97,55 +51,50 @@ export default function WarGame({
       return;
     }
 
-    const d = createDeck(2);
-    const pCard = d[0];
-    const dCard = d[1];
-    setDeck(d.slice(2));
+    setIsAnimating(true);
+    await new Promise((r) => setTimeout(r, 600));
+
+    const deck = createDeck(1);
+    const pCard = deck[0];
+    const dCard = deck[1];
     setPlayerCard(pCard);
     setDealerCard(dCard);
-    setPhase("reveal");
 
     const pVal = rankNumericValue(pCard.rank);
     const dVal = rankNumericValue(dCard.rank);
 
+    let net = 0;
+    let msg = "";
     if (pVal > dVal) {
-      finishGame(
-        true,
-        `You win! ${pCard.rank} beats ${dCard.rank}. +${betNum} credits!`,
-        betNum,
-      );
-    } else if (dVal > pVal) {
-      finishGame(
-        false,
-        `Dealer wins! ${dCard.rank} beats ${pCard.rank}. -${betNum} credits.`,
-        -betNum,
-      );
+      net = betNum;
+      msg = `${pCard.rank} beats ${dCard.rank}! +${net} credits!`;
+    } else if (pVal < dVal) {
+      net = -betNum;
+      msg = `Dealer's ${dCard.rank} beats your ${pCard.rank}. -${betNum} credits.`;
     } else {
-      setPhase("war");
-      toast("TIE! Go to WAR? (Double your bet)");
-    }
-  };
-
-  const handleWar = async () => {
-    if (BigInt(betNum * 2) > balance) {
-      toast.error("Insufficient credits for War");
-      return;
+      net = 0;
+      msg = `Tie! Both played ${pCard.rank}. Bet returned.`;
     }
 
-    const d = deck.length > 1 ? deck : createDeck(2);
-    const pWar = d[0];
-    const dWar = d[1];
-    setWarPlayerCard(pWar);
-    setWarDealerCard(dWar);
-    setDeck(d.slice(2));
+    setNetGain(net);
+    setResultMsg(msg);
+    setPhase("result");
+    setIsAnimating(false);
 
-    const pVal = rankNumericValue(pWar.rank);
-    const dVal = rankNumericValue(dWar.rank);
-
-    if (pVal >= dVal) {
-      await finishGame(true, `WAR WIN! +${betNum * 2} credits!`, betNum * 2);
-    } else {
-      await finishGame(false, `WAR LOSS! -${betNum * 2} credits.`, -betNum * 2);
+    try {
+      const won = net > 0;
+      await recordOutcome({
+        gameType: GameType.war,
+        bet: BigInt(betNum),
+        won,
+        winAmount: won ? BigInt(net + betNum) : BigInt(0),
+      });
+      onGameComplete();
+      if (net > 0) toast.success(`🎉 ${msg}`);
+      else if (net === 0) toast("Tie! Push.");
+      else toast.error(msg);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error recording game");
     }
   };
 
@@ -153,198 +102,231 @@ export default function WarGame({
     setPhase("bet");
     setPlayerCard(null);
     setDealerCard(null);
-    setWarPlayerCard(null);
-    setWarDealerCard(null);
-    setNetGain(0);
     setResultMsg("");
+    setNetGain(0);
   };
 
   return (
     <div className="space-y-4">
-      {phase === "bet" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl p-5 space-y-4"
+      <div className="text-center">
+        <h2
+          className="text-2xl font-black tracking-widest"
           style={{
-            background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${COLOR}40`,
+            color: COLOR,
+            textShadow: `0 0 20px ${COLOR}, 0 0 40px ${COLOR}`,
           }}
         >
-          <h3
-            className="font-black text-lg tracking-widest text-center"
-            style={{ color: COLOR }}
+          CASINO WAR
+        </h2>
+        <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+          Highest card wins — simple as that
+        </p>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {phase === "bet" && (
+          <motion.div
+            key="bet"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
           >
-            CASINO WAR
-          </h3>
-          <p className="text-center text-sm text-muted-foreground">
-            Higher card wins. Tie? Go to WAR!
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            {QUICK_BETS.map((q) => (
-              <button
-                type="button"
-                key={q}
-                onClick={() => setBet(String(q))}
-                className="px-3 py-1 rounded-full text-xs font-black"
-                style={{
-                  background: betNum === q ? COLOR : "oklch(0.16 0.02 280)",
-                  color: betNum === q ? "white" : "oklch(0.65 0.05 280)",
-                  border: `1px solid ${betNum === q ? COLOR : "oklch(0.22 0.03 280)"}`,
-                }}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              min="1"
-              value={bet}
-              onChange={(e) => setBet(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleDraw}
-              disabled={isPending}
-              className="font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
-            >
-              DRAW!
-            </Button>
-          </div>
-        </motion.div>
-      )}
-
-      {(phase === "reveal" || phase === "war" || phase === "result") && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-4"
-        >
-          <div
-            className="rounded-xl p-5 space-y-4"
-            style={{
-              background: "oklch(0.11 0.015 280)",
-              border: `1px solid ${COLOR}40`,
-            }}
-          >
-            <div className="grid grid-cols-2 gap-6">
-              <div className="text-center space-y-3">
-                <div className="text-xs font-black tracking-wider text-muted-foreground">
-                  YOUR CARD
+            <div style={WOOD_STYLE}>
+              <div className="rounded-2xl p-6 space-y-5" style={FELT_STYLE}>
+                {/* Zone labels */}
+                <div className="flex justify-center gap-4">
+                  {["YOUR BET", "⚔️ WAR", "DEALER"].map((zone) => (
+                    <div
+                      key={zone}
+                      className="flex-1 text-center py-2 rounded-xl"
+                      style={{
+                        border: `1px solid ${GOLD}`,
+                        background: "rgba(0,0,0,0.4)",
+                        color: GOLD,
+                        fontSize: "11px",
+                        fontWeight: 900,
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      {zone}
+                    </div>
+                  ))}
                 </div>
-                {playerCard && (
-                  <div className="flex justify-center">
-                    <WarCard card={playerCard} />
-                  </div>
-                )}
-                {warPlayerCard && (
-                  <>
-                    <div className="text-xs text-muted-foreground">
-                      WAR CARD
-                    </div>
-                    <div className="flex justify-center">
-                      <WarCard card={warPlayerCard} index={1} />
-                    </div>
-                  </>
-                )}
-              </div>
-              <div className="text-center space-y-3">
-                <div className="text-xs font-black tracking-wider text-muted-foreground">
-                  DEALER
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {QUICK_BETS.map((q) => (
+                    <button
+                      type="button"
+                      key={q}
+                      onClick={() => setBet(String(q))}
+                      className="rounded-full px-4 py-2 text-sm font-black transition-all"
+                      style={{
+                        background: betNum === q ? COLOR : "rgba(0,0,0,0.5)",
+                        border: `2px solid ${betNum === q ? COLOR : "rgba(255,215,0,0.3)"}`,
+                        color: betNum === q ? "white" : GOLD,
+                        boxShadow: betNum === q ? `0 0 12px ${COLOR}` : "none",
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
                 </div>
-                {dealerCard && (
-                  <div className="flex justify-center">
-                    <WarCard card={dealerCard} index={1} />
-                  </div>
-                )}
-                {warDealerCard && (
-                  <>
-                    <div className="text-xs text-muted-foreground">
-                      WAR CARD
-                    </div>
-                    <div className="flex justify-center">
-                      <WarCard card={warDealerCard} index={2} />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {phase === "war" && (
-              <div className="text-center space-y-3">
-                <div className="font-black text-xl" style={{ color: COLOR }}>
-                  ⚔️ WAR! ⚔️
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Put up {betNum} more credits and draw again!
-                </p>
+                <Input
+                  value={bet}
+                  onChange={(e) => setBet(e.target.value)}
+                  type="number"
+                  min={1}
+                  placeholder="Custom bet"
+                  className="bg-black/30 border-yellow-400/30 text-white text-center"
+                />
                 <Button
-                  onClick={handleWar}
-                  disabled={isPending}
-                  className="w-full font-black tracking-widest"
+                  onClick={handleDeal}
+                  disabled={isPending || isAnimating}
+                  className="w-full font-black tracking-widest text-lg py-6"
                   style={{
-                    background: COLOR,
-                    boxShadow: `0 0 12px ${COLOR}60`,
+                    background: `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.2 30))`,
+                    boxShadow: `0 0 24px ${COLOR}`,
                   }}
                 >
-                  GO TO WAR! (2x Bet)
+                  {isAnimating ? "DEALING..." : "⚔️ GO TO WAR"}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    finishGame(
-                      false,
-                      `Surrendered — lost ${Math.floor(betNum / 2)} credits.`,
-                      -Math.floor(betNum / 2),
-                    )
-                  }
-                  className="w-full font-black"
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {phase === "result" && (
+          <motion.div
+            key="result"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div style={WOOD_STYLE}>
+              <div className="rounded-2xl p-5 space-y-5" style={FELT_STYLE}>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Dealer side */}
+                  <div className="text-center space-y-3">
+                    <div
+                      className="inline-block py-1 px-3 rounded"
+                      style={{
+                        border: `1px solid ${GOLD}`,
+                        color: GOLD,
+                        fontSize: "11px",
+                        fontWeight: 900,
+                      }}
+                    >
+                      DEALER
+                    </div>
+                    <div className="flex justify-center">
+                      {dealerCard && (
+                        <RealisticCard card={dealerCard} index={0} />
+                      )}
+                    </div>
+                    <p
+                      className="text-sm font-bold"
+                      style={{ color: "rgba(255,215,0,0.6)" }}
+                    >
+                      {dealerCard?.rank}
+                    </p>
+                  </div>
+
+                  {/* VS divider */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden" />
+
+                  {/* Player side */}
+                  <div className="text-center space-y-3">
+                    <div
+                      className="inline-block py-1 px-3 rounded"
+                      style={{
+                        border: `2px solid ${COLOR}`,
+                        color: COLOR,
+                        fontSize: "11px",
+                        fontWeight: 900,
+                      }}
+                    >
+                      YOU
+                    </div>
+                    <div className="flex justify-center">
+                      {playerCard && (
+                        <RealisticCard card={playerCard} index={0} />
+                      )}
+                    </div>
+                    <p className="text-sm font-bold" style={{ color: COLOR }}>
+                      {playerCard?.rank}
+                    </p>
+                  </div>
+                </div>
+
+                {/* VS badge */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="h-px flex-1"
+                    style={{ background: `${COLOR}40` }}
+                  />
+                  <div
+                    className="rounded-full w-10 h-10 flex items-center justify-center font-black text-sm"
+                    style={{
+                      background: `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.2 30))`,
+                      boxShadow: `0 0 16px ${COLOR}`,
+                    }}
+                  >
+                    VS
+                  </div>
+                  <div
+                    className="h-px flex-1"
+                    style={{ background: `${COLOR}40` }}
+                  />
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="rounded-xl p-4 text-center space-y-2"
+                  style={{
+                    background:
+                      netGain > 0
+                        ? "rgba(0,100,40,0.6)"
+                        : netGain < 0
+                          ? "rgba(120,0,0,0.6)"
+                          : "rgba(50,50,0,0.6)",
+                    border: `2px solid ${netGain > 0 ? "rgba(0,255,100,0.4)" : netGain < 0 ? "rgba(255,0,0,0.4)" : "rgba(255,215,0,0.4)"}`,
+                  }}
                 >
-                  SURRENDER (Lose Half)
-                </Button>
+                  <p
+                    className="font-black text-2xl"
+                    style={{
+                      color:
+                        netGain > 0
+                          ? "#4ade80"
+                          : netGain < 0
+                            ? "#f87171"
+                            : GOLD,
+                    }}
+                  >
+                    {netGain > 0
+                      ? `+${netGain}`
+                      : netGain === 0
+                        ? "PUSH"
+                        : netGain}{" "}
+                    CREDITS
+                  </p>
+                  <p className="text-sm text-white/70">{resultMsg}</p>
+                  <Button
+                    onClick={reset}
+                    className="mt-2 font-black"
+                    style={{
+                      background: COLOR,
+                      boxShadow: `0 0 16px ${COLOR}`,
+                    }}
+                  >
+                    PLAY AGAIN
+                  </Button>
+                </motion.div>
               </div>
-            )}
-
-            {phase === "result" && (
-              <div
-                className="rounded-lg p-3 text-center font-black"
-                style={{
-                  background:
-                    netGain > 0
-                      ? "oklch(0.78 0.18 72 / 0.15)"
-                      : netGain < 0
-                        ? "oklch(0.577 0.245 27 / 0.15)"
-                        : "oklch(0.16 0.02 280)",
-                  color:
-                    netGain > 0
-                      ? "oklch(0.78 0.18 72)"
-                      : netGain < 0
-                        ? "oklch(0.577 0.245 27)"
-                        : COLOR,
-                  border: `1px solid ${netGain > 0 ? "oklch(0.78 0.18 72 / 0.5)" : netGain < 0 ? "oklch(0.577 0.245 27 / 0.5)" : `${COLOR}40`}`,
-                }}
-              >
-                {resultMsg}
-              </div>
-            )}
-          </div>
-
-          {phase === "result" && (
-            <Button
-              onClick={reset}
-              className="w-full font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
-            >
-              PLAY AGAIN
-            </Button>
-          )}
-        </motion.div>
-      )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

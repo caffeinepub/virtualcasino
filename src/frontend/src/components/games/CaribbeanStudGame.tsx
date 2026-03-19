@@ -5,19 +5,19 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
 import { useRecordGameOutcome } from "../../hooks/useQueries";
+import { RealisticCard } from "./RealisticCard";
 import {
   type Card,
-  type Suit,
   createDeck,
   evaluatePokerHand,
-  isRedSuit,
   rankNumericValue,
 } from "./cardUtils";
 
 type Phase = "bet" | "decision" | "result";
 
-const COLOR = "oklch(0.70 0.20 190)";
 const QUICK_BETS = [5, 10, 25, 50, 100];
+const COLOR = "oklch(0.70 0.20 190)";
+const GOLD = "rgba(255,215,0,0.8)";
 
 const RAISE_PAYOUTS: Record<string, number> = {
   "Royal Flush": 100,
@@ -32,14 +32,13 @@ const RAISE_PAYOUTS: Record<string, number> = {
   Nothing: 1,
 };
 
-function dealerQualifies(cards: Card[]): boolean {
+function dealerQualifiesFn(cards: Card[]): boolean {
   const hand = evaluatePokerHand(cards);
   if (hand !== "Nothing" && hand !== "Jacks or Better") return true;
-  // Check A-K or better
   const ranks = cards
     .map((c) => rankNumericValue(c.rank))
     .sort((a, b) => b - a);
-  if (ranks[0] === 14 && ranks[1] >= 13) return true; // Has Ace and King
+  if (ranks[0] === 14 && ranks[1] >= 13) return true;
   return false;
 }
 
@@ -64,53 +63,22 @@ function pokerHandScore(cards: Card[]): number {
   );
 }
 
-function GameCard({ card, index = 0 }: { card: Card; index?: number }) {
-  const isRed = isRedSuit(card.suit as Suit);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20, rotateY: 90 }}
-      animate={{ opacity: 1, y: 0, rotateY: 0 }}
-      transition={{ delay: index * 0.15, duration: 0.3 }}
-      className="w-12 rounded-lg flex flex-col justify-between p-1 font-black text-xs shadow-lg select-none"
-      style={{
-        background: card.faceDown ? "oklch(0.2 0.08 200)" : "white",
-        border: card.faceDown ? `2px solid ${COLOR}` : "1px solid #ccc",
-        color: isRed ? "#c0392b" : "#1a1a1a",
-        minWidth: "3rem",
-        minHeight: "4.5rem",
-      }}
-    >
-      {card.faceDown ? (
-        <div
-          className="flex items-center justify-center h-full"
-          style={{ color: COLOR }}
-        >
-          ?
-        </div>
-      ) : (
-        <>
-          <div className="flex flex-col leading-none">
-            <span>{card.rank}</span>
-            <span>{card.suit}</span>
-          </div>
-          <div className="self-center text-base">{card.suit}</div>
-          <div className="flex flex-col leading-none self-end rotate-180">
-            <span>{card.rank}</span>
-            <span>{card.suit}</span>
-          </div>
-        </>
-      )}
-    </motion.div>
-  );
-}
+const FELT_STYLE = {
+  background:
+    "radial-gradient(ellipse at 50% 30%, #1f6b35 0%, #0f3d1c 55%, #071b0c 100%)",
+};
+const WOOD_STYLE = {
+  background:
+    "linear-gradient(135deg, #5D3A1A 0%, #8B5E3C 30%, #6B3C1E 60%, #8B5E3C 80%, #5D3A1A 100%)",
+  padding: "10px",
+  borderRadius: "24px",
+  boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
+};
 
 export default function CaribbeanStudGame({
   balance,
   onGameComplete,
-}: {
-  balance: bigint;
-  onGameComplete: () => void;
-}) {
+}: { balance: bigint; onGameComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>("bet");
   const [bet, setBet] = useState("10");
   const [playerCards, setPlayerCards] = useState<Card[]>([]);
@@ -170,34 +138,29 @@ export default function CaribbeanStudGame({
     const revealedDealer = deckRef.slice(5, 10);
     const raises = betNum * 2;
     const totalBet = betNum + raises;
-
     const pHand = evaluatePokerHand(playerCards);
-    const dQualifies = dealerQualifies(revealedDealer);
-
+    const dQualifies = dealerQualifiesFn(revealedDealer);
     let net = 0;
     let msg = "";
-
     if (!dQualifies) {
-      net = betNum; // ante pays 1:1, raise pushes
+      net = betNum;
       msg = `Dealer doesn't qualify! Ante pays 1:1. +${net} credits!`;
     } else {
       const pScore = pokerHandScore(playerCards);
       const dScore = pokerHandScore(revealedDealer);
       if (pScore > dScore) {
         const raisePay = RAISE_PAYOUTS[pHand] ?? 1;
-        net = betNum + raises * raisePay; // ante 1:1 + raise based on hand
+        net = betNum + raises * raisePay;
         msg = `You win with ${pHand}! +${net} credits!`;
       } else {
         net = -totalBet;
         msg = `Dealer wins. -${totalBet} credits.`;
       }
     }
-
     setDealerCards(revealedDealer);
     setNetGain(net);
     setResultMsg(msg);
     setPhase("result");
-
     try {
       const won = net > 0;
       await recordOutcome({
@@ -225,6 +188,18 @@ export default function CaribbeanStudGame({
 
   return (
     <div className="space-y-4">
+      <div className="text-center">
+        <h2
+          className="text-2xl font-black tracking-widest"
+          style={{
+            color: COLOR,
+            textShadow: `0 0 20px ${COLOR}, 0 0 40px ${COLOR}`,
+          }}
+        >
+          CARIBBEAN STUD
+        </h2>
+      </div>
+
       <AnimatePresence mode="wait">
         {phase === "bet" && (
           <motion.div
@@ -232,57 +207,72 @@ export default function CaribbeanStudGame({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-xl p-5 space-y-4"
-            style={{
-              background: "oklch(0.11 0.015 280)",
-              border: `1px solid ${COLOR}40`,
-            }}
           >
-            <h3
-              className="font-black text-lg tracking-widest text-center"
-              style={{ color: COLOR }}
-            >
-              CARIBBEAN STUD
-            </h3>
-            <p
-              className="text-center text-sm"
-              style={{ color: "oklch(0.65 0.05 280)" }}
-            >
-              Beat the dealer's 5-card hand
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {QUICK_BETS.map((q) => (
-                <button
-                  type="button"
-                  key={q}
-                  onClick={() => setBet(String(q))}
-                  className="rounded px-3 py-1.5 text-sm font-bold transition-all"
+            <div style={WOOD_STYLE}>
+              <div className="rounded-2xl p-6 space-y-5" style={FELT_STYLE}>
+                <div className="flex justify-center gap-3 mb-2">
+                  {["ANTE", "CALL", "BONUS"].map((zone) => (
+                    <div
+                      key={zone}
+                      className="text-center py-1 px-3 rounded"
+                      style={{
+                        border: `1px solid ${GOLD}`,
+                        background: "rgba(0,0,0,0.4)",
+                        color: GOLD,
+                        fontSize: "11px",
+                        fontWeight: 900,
+                        letterSpacing: "0.12em",
+                      }}
+                    >
+                      {zone}
+                    </div>
+                  ))}
+                </div>
+                <p
+                  className="text-center text-sm"
+                  style={{ color: "rgba(255,255,255,0.6)" }}
+                >
+                  Beat the dealer's 5-card hand
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {QUICK_BETS.map((q) => (
+                    <button
+                      type="button"
+                      key={q}
+                      onClick={() => setBet(String(q))}
+                      className="rounded-full px-4 py-2 text-sm font-black transition-all"
+                      style={{
+                        background: betNum === q ? COLOR : "rgba(0,0,0,0.5)",
+                        border: `2px solid ${betNum === q ? COLOR : "rgba(255,215,0,0.3)"}`,
+                        color: betNum === q ? "white" : GOLD,
+                        boxShadow: betNum === q ? `0 0 12px ${COLOR}` : "none",
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+                <Input
+                  value={bet}
+                  onChange={(e) => setBet(e.target.value)}
+                  type="number"
+                  min={1}
+                  placeholder="Custom bet"
+                  className="bg-black/30 border-yellow-400/30 text-white text-center"
+                />
+                <Button
+                  onClick={handleDeal}
+                  disabled={isPending}
+                  className="w-full font-black tracking-widest text-lg py-6"
                   style={{
-                    background: betNum === q ? COLOR : "oklch(0.16 0.02 280)",
-                    border: `1px solid ${betNum === q ? COLOR : "oklch(0.25 0.03 280)"}`,
-                    color: betNum === q ? "white" : "oklch(0.65 0.05 280)",
+                    background: `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.18 190))`,
+                    boxShadow: `0 0 24px ${COLOR}`,
                   }}
                 >
-                  {q}
-                </button>
-              ))}
+                  DEAL CARDS
+                </Button>
+              </div>
             </div>
-            <Input
-              value={bet}
-              onChange={(e) => setBet(e.target.value)}
-              type="number"
-              min={1}
-              placeholder="Custom bet"
-              className="bg-transparent border-white/20 text-white"
-            />
-            <Button
-              onClick={handleDeal}
-              disabled={isPending}
-              className="w-full font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 20px ${COLOR}60` }}
-            >
-              DEAL
-            </Button>
           </motion.div>
         )}
 
@@ -292,100 +282,175 @@ export default function CaribbeanStudGame({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="rounded-xl p-5 space-y-5"
-            style={{
-              background: "oklch(0.11 0.015 280)",
-              border: `1px solid ${COLOR}40`,
-            }}
           >
-            <div className="space-y-2">
-              <p
-                className="text-sm font-bold tracking-wider"
-                style={{ color: "oklch(0.65 0.05 280)" }}
-              >
-                DEALER
-              </p>
-              <div className="flex gap-2">
-                {dealerCards.map((c, i) => (
-                  <GameCard key={`${c.rank}${c.suit}`} card={c} index={i} />
-                ))}
+            <div style={WOOD_STYLE}>
+              <div className="rounded-2xl p-5 space-y-4" style={FELT_STYLE}>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-px flex-1"
+                      style={{ background: "rgba(255,215,0,0.3)" }}
+                    />
+                    <span
+                      className="text-xs font-black tracking-widest px-2"
+                      style={{ color: GOLD }}
+                    >
+                      DEALER
+                    </span>
+                    <div
+                      className="h-px flex-1"
+                      style={{ background: "rgba(255,215,0,0.3)" }}
+                    />
+                  </div>
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {dealerCards.map((c) => (
+                      <RealisticCard
+                        key={`dc-${c.rank}${c.suit}`}
+                        card={c}
+                        faceDown={!!c.faceDown}
+                        small
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-center gap-3">
+                  {["ANTE", "CALL", "BONUS"].map((zone, zi) => (
+                    <div
+                      key={zone}
+                      className="flex-1 text-center py-1 rounded"
+                      style={{
+                        border: `1px solid ${GOLD}`,
+                        background: "rgba(0,0,0,0.35)",
+                      }}
+                    >
+                      <span
+                        className="text-xs font-black block"
+                        style={{ color: GOLD }}
+                      >
+                        {zone}
+                      </span>
+                      {zi === 0 && betNum > 0 && (
+                        <svg
+                          className="mx-auto mt-1"
+                          width="28"
+                          height="28"
+                          viewBox="0 0 44 44"
+                        >
+                          <title>chip</title>
+                          <circle
+                            cx="22"
+                            cy="22"
+                            r="20"
+                            fill="#e74c3c"
+                            stroke="#f5f5f5"
+                            strokeWidth="2"
+                          />
+                          <text
+                            x="22"
+                            y="27"
+                            textAnchor="middle"
+                            fill="white"
+                            fontSize="9"
+                            fontWeight="bold"
+                          >
+                            {betNum}
+                          </text>
+                        </svg>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-px flex-1"
+                      style={{ background: "rgba(255,215,0,0.3)" }}
+                    />
+                    <span
+                      className="text-xs font-black tracking-widest px-2"
+                      style={{ color: COLOR }}
+                    >
+                      YOUR HAND — {evaluatePokerHand(playerCards)}
+                    </span>
+                    <div
+                      className="h-px flex-1"
+                      style={{ background: "rgba(255,215,0,0.3)" }}
+                    />
+                  </div>
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {playerCards.map((c) => (
+                      <RealisticCard
+                        key={`pc-${c.rank}${c.suit}`}
+                        card={c}
+                        small
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {phase === "decision" && (
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleFold}
+                      disabled={isPending}
+                      className="flex-1 font-black py-5"
+                      style={{
+                        background: "linear-gradient(135deg, #7f1d1d, #991b1b)",
+                        border: "1px solid #ef4444",
+                      }}
+                    >
+                      FOLD
+                    </Button>
+                    <Button
+                      onClick={handleRaise}
+                      disabled={isPending}
+                      className="flex-1 font-black py-5"
+                      style={{
+                        background: `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.18 190))`,
+                        boxShadow: `0 0 16px ${COLOR}`,
+                      }}
+                    >
+                      RAISE (×{betNum * 2})
+                    </Button>
+                  </div>
+                )}
+
+                {phase === "result" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="rounded-xl p-4 text-center space-y-2"
+                    style={{
+                      background:
+                        netGain >= 0
+                          ? "rgba(0,100,40,0.6)"
+                          : "rgba(120,0,0,0.6)",
+                      border: `2px solid ${netGain >= 0 ? "rgba(0,255,100,0.4)" : "rgba(255,0,0,0.4)"}`,
+                    }}
+                  >
+                    <p
+                      className="font-black text-2xl"
+                      style={{ color: netGain >= 0 ? "#4ade80" : "#f87171" }}
+                    >
+                      {netGain >= 0 ? `+${netGain}` : netGain} CREDITS
+                    </p>
+                    <p className="text-sm text-white/70">{resultMsg}</p>
+                    <Button
+                      onClick={reset}
+                      className="mt-2 font-black"
+                      style={{
+                        background: COLOR,
+                        boxShadow: `0 0 16px ${COLOR}`,
+                      }}
+                    >
+                      PLAY AGAIN
+                    </Button>
+                  </motion.div>
+                )}
               </div>
             </div>
-            <div className="space-y-2">
-              <p
-                className="text-sm font-bold tracking-wider"
-                style={{ color: COLOR }}
-              >
-                YOUR HAND — {evaluatePokerHand(playerCards)}
-              </p>
-              <div className="flex gap-2">
-                {playerCards.map((c, i) => (
-                  <GameCard key={`${c.rank}${c.suit}`} card={c} index={i} />
-                ))}
-              </div>
-            </div>
-            {phase === "decision" && (
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleFold}
-                  disabled={isPending}
-                  variant="outline"
-                  className="flex-1 font-black"
-                  style={{
-                    borderColor: "oklch(0.55 0.2 20)",
-                    color: "oklch(0.55 0.2 20)",
-                  }}
-                >
-                  FOLD
-                </Button>
-                <Button
-                  onClick={handleRaise}
-                  disabled={isPending}
-                  className="flex-1 font-black"
-                  style={{ background: COLOR }}
-                >
-                  RAISE (×{betNum * 2})
-                </Button>
-              </div>
-            )}
-            {phase === "result" && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="rounded-lg p-4 text-center space-y-2"
-                style={{
-                  background:
-                    netGain >= 0
-                      ? "oklch(0.15 0.08 150)"
-                      : "oklch(0.15 0.08 20)",
-                }}
-              >
-                <p
-                  className="font-black text-lg"
-                  style={{
-                    color:
-                      netGain >= 0
-                        ? "oklch(0.75 0.2 150)"
-                        : "oklch(0.75 0.2 20)",
-                  }}
-                >
-                  {netGain >= 0 ? `+${netGain}` : netGain} CREDITS
-                </p>
-                <p
-                  className="text-sm"
-                  style={{ color: "oklch(0.75 0.05 280)" }}
-                >
-                  {resultMsg}
-                </p>
-                <Button
-                  onClick={reset}
-                  className="mt-2 font-black"
-                  style={{ background: COLOR }}
-                >
-                  PLAY AGAIN
-                </Button>
-              </motion.div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>

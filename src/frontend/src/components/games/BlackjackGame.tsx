@@ -5,14 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
 import { useRecordGameOutcome } from "../../hooks/useQueries";
-import {
-  type Card,
-  type Suit,
-  createDeck,
-  handValue,
-  isBlackjack,
-  isRedSuit,
-} from "./cardUtils";
+import { RealisticCard } from "./RealisticCard";
+import { type Card, createDeck, handValue, isBlackjack } from "./cardUtils";
 
 type Phase = "bet" | "playing" | "result";
 
@@ -21,103 +15,97 @@ interface HandResult {
   netGain: number;
 }
 
-function PlayingCard({ card, index = 0 }: { card: Card; index?: number }) {
-  const isRed = !card.faceDown && isRedSuit(card.suit as Suit);
+const QUICK_BETS = [5, 10, 25, 50, 100];
+const FELT =
+  "radial-gradient(ellipse at 50% 30%, #1b5e20 0%, #0d3b10 60%, #071a08 100%)";
+const RAIL = "linear-gradient(180deg, #5d3a1a 0%, #3e2208 40%, #5d3a1a 100%)";
 
+function ChipStack({ amount }: { amount: number }) {
+  const chips = [
+    { color: "#e53935", threshold: 1 },
+    { color: "#1e88e5", threshold: 5 },
+    { color: "#43a047", threshold: 25 },
+    { color: "#000", threshold: 100 },
+  ];
+  const chip =
+    chips
+      .slice()
+      .reverse()
+      .find((c) => amount >= c.threshold) ?? chips[0];
+  const count = Math.min(Math.ceil(amount / 5), 6);
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -30, rotateY: 90 }}
-      animate={{ opacity: 1, y: 0, rotateY: 0 }}
-      transition={{ delay: index * 0.15, duration: 0.3 }}
-      className="relative select-none"
-      style={{ perspective: "400px" }}
+    <div
+      className="relative flex flex-col-reverse items-center"
+      style={{ width: 32, height: 16 + count * 4 }}
     >
-      <div
-        className="w-14 h-20 rounded-lg flex flex-col justify-between p-1.5 font-black text-sm shadow-lg"
-        style={{
-          background: card.faceDown
-            ? "linear-gradient(135deg, oklch(0.25 0.08 280), oklch(0.18 0.06 290))"
-            : "white",
-          border: card.faceDown
-            ? "1px solid oklch(0.55 0.25 290 / 0.6)"
-            : "1px solid #ccc",
-          color: card.faceDown ? "transparent" : isRed ? "#c0392b" : "#1a1a1a",
-        }}
-      >
-        {card.faceDown ? (
-          <div
-            className="absolute inset-1 rounded"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(45deg, oklch(0.55 0.25 290 / 0.3) 0px, oklch(0.55 0.25 290 / 0.3) 2px, transparent 2px, transparent 8px)",
-            }}
-          />
-        ) : (
-          <>
-            <div className="flex flex-col leading-none">
-              <span className="text-xs font-black">{card.rank}</span>
-              <span className="text-xs">{card.suit}</span>
-            </div>
-            <div className="self-center text-lg leading-none">{card.suit}</div>
-            <div className="flex flex-col leading-none self-end rotate-180">
-              <span className="text-xs font-black">{card.rank}</span>
-              <span className="text-xs">{card.suit}</span>
-            </div>
-          </>
-        )}
-      </div>
-    </motion.div>
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: static chip visual
+          key={i}
+          className="absolute rounded-full border-2 border-white/30"
+          style={{
+            width: 32,
+            height: 16,
+            bottom: i * 4,
+            background: chip.color,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.5)",
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
-function HandDisplay({
+function HandArea({
   cards,
   label,
-  active = false,
-  color,
+  active,
+  value,
+  bust,
+  bj,
 }: {
   cards: Card[];
   label: string;
-  active?: boolean;
-  color: string;
+  active: boolean;
+  value: number;
+  bust: boolean;
+  bj: boolean;
 }) {
-  const value = handValue(cards);
-  const bust = value > 21;
-  const hasBlackjack = isBlackjack(cards);
-
   return (
     <div
-      className="rounded-xl p-3"
+      className="flex flex-col items-center gap-2 p-3 rounded-xl transition-all"
       style={{
-        background: active ? "oklch(0.12 0.02 280)" : "oklch(0.10 0.015 280)",
+        background: active ? "rgba(255,255,255,0.06)" : "transparent",
         border: active
-          ? `2px solid ${color}`
-          : "1px solid oklch(0.18 0.025 280)",
-        boxShadow: active ? `0 0 16px ${color}40` : "none",
+          ? "1.5px solid rgba(255,255,255,0.25)"
+          : "1.5px solid transparent",
+        boxShadow: active ? "0 0 20px rgba(255,255,255,0.1)" : "none",
       }}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-black tracking-wider text-muted-foreground">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-black tracking-widest text-white/70 uppercase">
           {label}
         </span>
         <span
-          className="text-sm font-black"
+          className="text-sm font-black px-2 py-0.5 rounded"
           style={{
-            color: bust
-              ? "oklch(0.577 0.245 27)"
-              : hasBlackjack
-                ? "oklch(0.78 0.18 72)"
-                : color,
+            background: bust
+              ? "#b71c1c"
+              : bj
+                ? "#f9a825"
+                : "rgba(255,255,255,0.15)",
+            color: bust || bj ? "#fff" : "#fff",
           }}
         >
-          {bust ? "BUST" : hasBlackjack ? "BLACKJACK!" : value}
+          {bust ? "BUST" : bj ? "BJ!" : value}
         </span>
       </div>
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1 flex-wrap justify-center">
         {cards.map((card, i) => (
-          <PlayingCard
+          <RealisticCard
             key={`${card.rank}${card.suit}${i}`}
             card={card}
+            faceDown={card.faceDown}
             index={i}
           />
         ))}
@@ -125,8 +113,6 @@ function HandDisplay({
     </div>
   );
 }
-
-const QUICK_BETS = [5, 10, 25, 50, 100];
 
 export default function BlackjackGame({
   balance,
@@ -147,7 +133,6 @@ export default function BlackjackGame({
 
   const { mutateAsync: recordOutcome, isPending } = useRecordGameOutcome();
   const betNum = Number.parseInt(bet, 10) || 0;
-  const color = "oklch(0.70 0.20 190)";
 
   function drawCard(d: Card[], faceDown = false): [Card, Card[]] {
     const card = { ...d[0], faceDown };
@@ -163,20 +148,18 @@ export default function BlackjackGame({
       toast.error("Insufficient credits");
       return;
     }
-
     let d = createDeck(2);
     let [p1, d1] = drawCard(d);
     d = d1;
-    let [d_dealer, d2] = drawCard(d);
+    let [dd, d2] = drawCard(d);
     d = d2;
     let [p2, d3] = drawCard(d);
     d = d3;
-    let [d_hole, d4] = drawCard(d, true);
+    let [dh, d4] = drawCard(d, true);
     d = d4;
-
     setDeck(d);
     setPlayerHands([[p1, p2]]);
-    setDealerHand([d_dealer, d_hole]);
+    setDealerHand([dd, dh]);
     setSplitBets([betNum]);
     setCurrentHandIdx(0);
     setResults([]);
@@ -190,16 +173,13 @@ export default function BlackjackGame({
   ) => {
     const finalResults: HandResult[] = [];
     let totalNet = 0;
-
     for (let i = 0; i < pHands.length; i++) {
       const pVal = handValue(pHands[i]);
       const dVal = handValue(dHand);
       const pBJ = isBlackjack(pHands[i]) && i === 0 && pHands.length === 1;
       const b = bets[i];
-
       let outcome: HandResult["outcome"];
       let netGain = 0;
-
       if (pVal > 21) {
         outcome = "lose";
         netGain = -b;
@@ -216,15 +196,11 @@ export default function BlackjackGame({
         outcome = "lose";
         netGain = -b;
       }
-
       totalNet += netGain;
       finalResults.push({ outcome, netGain });
     }
-
     setResults(finalResults);
     setPhase("result");
-
-    // Record to backend — use the primary bet, won if any positive net
     try {
       const won = totalNet > 0;
       const winAmount = won ? BigInt(totalNet + betNum) : BigInt(0);
@@ -245,12 +221,9 @@ export default function BlackjackGame({
 
   const runDealer = async (pHands: Card[][], bets: number[]) => {
     setDealerThinking(true);
-    // Reveal hole card
     let dHand = dealerHand.map((c) => ({ ...c, faceDown: false }));
     setDealerHand([...dHand]);
-
     let d = deck;
-    // Dealer hits until 17+
     await new Promise((r) => setTimeout(r, 600));
     while (handValue(dHand) < 17) {
       let rawCard: Card;
@@ -272,27 +245,22 @@ export default function BlackjackGame({
     );
     setDeck(newDeck);
     setPlayerHands(newHands);
-
-    if (handValue(newHands[currentHandIdx]) >= 21) {
+    if (handValue(newHands[currentHandIdx]) >= 21)
       await advanceOrDealer(newHands, splitBets);
-    }
   };
 
   const advanceOrDealer = async (pHands: Card[][], bets: number[]) => {
     if (currentHandIdx < pHands.length - 1) {
       setCurrentHandIdx(currentHandIdx + 1);
     } else {
-      // Check if all player hands busted
       const allBust = pHands.every((h) => handValue(h) > 21);
-      if (allBust) {
+      if (allBust)
         await resolveGame(
           pHands,
           dealerHand.map((c) => ({ ...c, faceDown: false })),
           bets,
         );
-      } else {
-        await runDealer(pHands, bets);
-      }
+      else await runDealer(pHands, bets);
     }
   };
 
@@ -314,14 +282,12 @@ export default function BlackjackGame({
 
   const handleSplit = async () => {
     const hand = playerHands[currentHandIdx];
-    const c1 = hand[0];
-    const c2 = hand[1];
     let [extra1, d1] = drawCard(deck);
     let [extra2, d2] = drawCard(d1);
     const newHands = [
       ...playerHands.slice(0, currentHandIdx),
-      [c1, extra1],
-      [c2, extra2],
+      [hand[0], extra1],
+      [hand[1], extra2],
       ...playerHands.slice(currentHandIdx + 1),
     ];
     const newBets = [
@@ -341,12 +307,10 @@ export default function BlackjackGame({
     playerHands[currentHandIdx][0].rank ===
       playerHands[currentHandIdx][1].rank &&
     playerHands.length < 4;
-
   const canDouble =
     phase === "playing" &&
     playerHands[currentHandIdx]?.length === 2 &&
     BigInt(splitBets[currentHandIdx] ?? 0) <= balance;
-
   const resetGame = () => {
     setPhase("bet");
     setPlayerHands([[]]);
@@ -355,52 +319,234 @@ export default function BlackjackGame({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2
-          className="font-display font-black text-xl tracking-widest"
-          style={{ color, textShadow: `0 0 12px ${color}` }}
-        >
-          BLACKJACK
-        </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">BALANCE</span>
-          <span className="font-black text-gold">{balance.toString()}</span>
+    <div className="w-full max-w-2xl mx-auto">
+      {/* TABLE */}
+      <div
+        className="relative rounded-[2rem] overflow-hidden"
+        style={{
+          background: FELT,
+          border: "10px solid #3e2208",
+          borderImage: `${RAIL} 10`,
+          boxShadow:
+            "0 0 0 3px #8d5524, 0 8px 40px rgba(0,0,0,0.7), inset 0 0 60px rgba(0,0,0,0.4)",
+          minHeight: 420,
+        }}
+      >
+        {/* Felt texture overlay */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E\")",
+          }}
+        />
+        {/* Table arc line */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2"
+          style={{
+            width: "80%",
+            height: 2,
+            background: "rgba(255,255,255,0.12)",
+            borderRadius: 999,
+            marginTop: 16,
+          }}
+        />
+
+        <div className="relative z-10 p-5 space-y-4">
+          {/* DEALER AREA */}
+          <div className="text-center">
+            <HandArea
+              cards={dealerHand}
+              label="DEALER"
+              active={false}
+              value={handValue(dealerHand)}
+              bust={handValue(dealerHand) > 21}
+              bj={isBlackjack(dealerHand)}
+            />
+          </div>
+
+          {/* CENTER DIVIDER */}
+          <div className="flex items-center gap-3">
+            <div
+              className="flex-1 h-px"
+              style={{ background: "rgba(255,255,255,0.1)" }}
+            />
+            <div className="text-xs font-black tracking-widest text-white/40 uppercase">
+              Blackjack Pays 3:2
+            </div>
+            <div
+              className="flex-1 h-px"
+              style={{ background: "rgba(255,255,255,0.1)" }}
+            />
+          </div>
+
+          {/* PLAYER AREA */}
+          {(phase === "playing" || phase === "result") && (
+            <div className="space-y-2">
+              {playerHands.map((hand, i) => (
+                <HandArea
+                  key={hand.map((c) => c.rank + c.suit).join("") || `hand-${i}`}
+                  cards={hand}
+                  label={playerHands.length > 1 ? `HAND ${i + 1}` : "YOUR HAND"}
+                  active={phase === "playing" && i === currentHandIdx}
+                  value={handValue(hand)}
+                  bust={handValue(hand) > 21}
+                  bj={isBlackjack(hand)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* BET DISPLAY */}
+          {phase !== "bet" && (
+            <div className="flex justify-center gap-4 items-end">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-xs text-white/50 font-black tracking-wider">
+                  BET
+                </span>
+                <ChipStack amount={betNum} />
+                <span className="text-xs text-white font-black">{betNum}</span>
+              </div>
+            </div>
+          )}
+
+          {/* RESULTS */}
+          <AnimatePresence>
+            {phase === "result" && results.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-2"
+              >
+                {results.map((r, i) => (
+                  <div
+                    key={r.outcome + String(i)}
+                    className="rounded-xl p-3 flex items-center justify-between"
+                    style={{
+                      background:
+                        r.outcome === "lose"
+                          ? "rgba(183,28,28,0.3)"
+                          : "rgba(27,94,32,0.5)",
+                      border: `1px solid ${r.outcome === "lose" ? "rgba(239,83,80,0.5)" : "rgba(102,187,106,0.5)"}`,
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
+                    <span className="font-black text-white text-sm">
+                      {r.outcome === "blackjack" && "🎉 BLACKJACK!"}
+                      {r.outcome === "win" && "🏆 YOU WIN!"}
+                      {r.outcome === "push" && "🤝 PUSH"}
+                      {r.outcome === "lose" && "💸 YOU LOSE"}
+                    </span>
+                    <span
+                      className="font-black text-sm"
+                      style={{
+                        color:
+                          r.netGain > 0
+                            ? "#a5d6a7"
+                            : r.netGain === 0
+                              ? "#fff"
+                              : "#ef9a9a",
+                      }}
+                    >
+                      {r.netGain > 0 ? `+${r.netGain}` : r.netGain} credits
+                    </span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ACTIONS */}
+          {phase === "playing" && !dealerThinking && (
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "HIT", fn: handleHit, color: "#1565c0" },
+                { label: "STAND", fn: handleStand, color: "#b71c1c" },
+                ...(canDouble
+                  ? [
+                      {
+                        label: "DOUBLE DOWN",
+                        fn: handleDouble,
+                        color: "#6a1b9a",
+                      },
+                    ]
+                  : []),
+                ...(canSplit
+                  ? [{ label: "SPLIT", fn: handleSplit, color: "#e65100" }]
+                  : []),
+              ].map(({ label, fn, color }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={fn}
+                  className="py-3 rounded-xl font-black tracking-wider text-white text-sm transition-all hover:brightness-110 active:scale-95"
+                  style={{
+                    background: color,
+                    boxShadow: `0 4px 12px ${color}60`,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {dealerThinking && (
+            <div className="text-center py-2 text-sm font-black tracking-widest text-white/60 animate-pulse">
+              DEALER PLAYING...
+            </div>
+          )}
+
+          {phase === "result" && (
+            <Button
+              onClick={resetGame}
+              disabled={isPending}
+              className="w-full py-4 font-black tracking-widest"
+              style={{ background: "#c8a84b", color: "#1a1a1a" }}
+            >
+              DEAL AGAIN
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* BET PHASE */}
+      {/* BET PANEL (outside table) */}
       {phase === "bet" && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-6 space-y-4"
+          className="mt-4 rounded-2xl p-5 space-y-4"
           style={{
             background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${color}40`,
+            border: "1px solid oklch(0.20 0.03 280)",
           }}
         >
-          <p className="text-sm text-muted-foreground font-bold tracking-wider">
+          <p
+            className="text-xs font-black tracking-widest text-center"
+            style={{ color: "#c8a84b" }}
+          >
             PLACE YOUR BET
           </p>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap justify-center">
             {QUICK_BETS.map((q) => (
               <button
                 key={q}
                 type="button"
                 onClick={() => setBet(q.toString())}
-                className="px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+                className="px-4 py-2 rounded-xl text-sm font-black transition-all hover:scale-105"
                 style={
                   bet === q.toString()
-                    ? { background: color, color: "#000" }
+                    ? {
+                        background: "#c8a84b",
+                        color: "#1a1a1a",
+                        boxShadow: "0 0 16px #c8a84b60",
+                      }
                     : {
-                        background: "oklch(0.16 0.025 278)",
-                        color: "oklch(0.60 0.02 270)",
-                        border: "1px solid oklch(0.22 0.03 275)",
+                        background: "oklch(0.16 0.02 280)",
+                        color: "#aaa",
+                        border: "1px solid oklch(0.22 0.03 280)",
                       }
                 }
-                data-ocid="blackjack.quickbet.button"
               >
                 {q}
               </button>
@@ -411,162 +557,16 @@ export default function BlackjackGame({
             min="1"
             value={bet}
             onChange={(e) => setBet(e.target.value)}
-            className="bg-secondary border-border text-foreground font-bold"
-            data-ocid="blackjack.bet.input"
+            className="text-center font-bold"
           />
           <Button
             onClick={handleDeal}
             className="w-full py-5 font-black tracking-widest text-black"
-            style={{ background: color, boxShadow: `0 0 20px ${color}50` }}
-            data-ocid="blackjack.deal.button"
+            style={{ background: "#c8a84b", boxShadow: "0 0 24px #c8a84b50" }}
           >
             🃏 DEAL
           </Button>
         </motion.div>
-      )}
-
-      {/* PLAYING PHASE */}
-      {(phase === "playing" || phase === "result") && (
-        <div className="space-y-4">
-          {/* Dealer */}
-          <HandDisplay
-            cards={dealerHand}
-            label="DEALER"
-            color="oklch(0.577 0.245 27)"
-          />
-
-          {/* Player Hands */}
-          {playerHands.map((hand, i) => (
-            <HandDisplay
-              key={
-                hand.map((c) => c.rank + c.suit).join("") || `hand-empty-${i}`
-              }
-              cards={hand}
-              label={playerHands.length > 1 ? `HAND ${i + 1}` : "YOUR HAND"}
-              active={phase === "playing" && i === currentHandIdx}
-              color={color}
-            />
-          ))}
-
-          {/* Results */}
-          <AnimatePresence>
-            {phase === "result" && results.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="space-y-2"
-              >
-                {results.map((r, i) => (
-                  <div
-                    key={r.outcome + String(i) + String(r.netGain)}
-                    className="rounded-xl p-4 flex items-center justify-between"
-                    style={{
-                      background:
-                        r.outcome === "lose"
-                          ? "oklch(0.577 0.245 27 / 0.1)"
-                          : "oklch(0.78 0.18 72 / 0.1)",
-                      border: `1px solid ${
-                        r.outcome === "lose"
-                          ? "oklch(0.577 0.245 27 / 0.4)"
-                          : "oklch(0.78 0.18 72 / 0.4)"
-                      }`,
-                    }}
-                    data-ocid={`blackjack.result.${i + 1}`}
-                  >
-                    <span className="font-black text-lg">
-                      {r.outcome === "blackjack" && "🎉 BLACKJACK!"}
-                      {r.outcome === "win" && "🏆 YOU WIN!"}
-                      {r.outcome === "push" && "🤝 PUSH"}
-                      {r.outcome === "lose" && "💸 YOU LOSE"}
-                    </span>
-                    <span
-                      className="font-black"
-                      style={{
-                        color:
-                          r.netGain > 0
-                            ? "oklch(0.78 0.18 72)"
-                            : r.netGain === 0
-                              ? "oklch(0.60 0.02 270)"
-                              : "oklch(0.577 0.245 27)",
-                      }}
-                    >
-                      {r.netGain > 0 ? `+${r.netGain}` : r.netGain} credits
-                    </span>
-                  </div>
-                ))}
-                <Button
-                  onClick={resetGame}
-                  className="w-full py-4 font-black tracking-widest text-black"
-                  style={{ background: color }}
-                  data-ocid="blackjack.play_again.button"
-                >
-                  PLAY AGAIN
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Actions */}
-          {phase === "playing" && !dealerThinking && (
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                onClick={handleHit}
-                className="py-4 font-black tracking-wider"
-                style={{ background: "oklch(0.55 0.25 290)", color: "white" }}
-                data-ocid="blackjack.hit.button"
-              >
-                HIT
-              </Button>
-              <Button
-                onClick={handleStand}
-                className="py-4 font-black tracking-wider"
-                style={{ background: "oklch(0.577 0.245 27)", color: "white" }}
-                data-ocid="blackjack.stand.button"
-              >
-                STAND
-              </Button>
-              {canDouble && (
-                <Button
-                  onClick={handleDouble}
-                  className="py-4 font-black tracking-wider"
-                  style={{ background: "oklch(0.65 0.28 340)", color: "white" }}
-                  data-ocid="blackjack.double.button"
-                >
-                  DOUBLE DOWN
-                </Button>
-              )}
-              {canSplit && (
-                <Button
-                  onClick={handleSplit}
-                  className="py-4 font-black tracking-wider"
-                  style={{ background: "oklch(0.78 0.18 72)", color: "#000" }}
-                  data-ocid="blackjack.split.button"
-                >
-                  SPLIT
-                </Button>
-              )}
-            </div>
-          )}
-
-          {dealerThinking && (
-            <div
-              className="rounded-xl p-4 text-center font-black tracking-widest text-sm"
-              style={{ color, background: `${color}15` }}
-              data-ocid="blackjack.dealer.loading_state"
-            >
-              DEALER PLAYING...
-            </div>
-          )}
-
-          {isPending && (
-            <div
-              className="rounded-xl p-2 text-center text-xs text-muted-foreground"
-              data-ocid="blackjack.recording.loading_state"
-            >
-              Recording result...
-            </div>
-          )}
-        </div>
       )}
     </div>
   );

@@ -1,167 +1,71 @@
-import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
 import { useRecordGameOutcome } from "../../hooks/useQueries";
 
+const QUICK_BETS = [5, 10, 25, 50, 100];
+
+// European roulette number order around the wheel
+const WHEEL_ORDER = [
+  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24,
+  16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
+];
 const RED_NUMBERS = new Set([
   1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
 ]);
 
-function getNumberColor(n: number): "green" | "red" | "black" {
-  if (n === 0) return "green";
-  return RED_NUMBERS.has(n) ? "red" : "black";
-}
+type BetType = { label: string; numbers: number[]; payout: number };
 
-const COLOR = "oklch(0.60 0.24 20)";
-
-type BetKey = string;
-
-interface BetInfo {
-  label: string;
-  payout: number; // multiplier (win this times bet)
-  numbers: number[];
-}
-
-function getBetInfo(key: BetKey): BetInfo {
-  if (/^\d+$/.test(key)) {
-    const n = Number.parseInt(key, 10);
-    return { label: key, payout: 35, numbers: [n] };
-  }
-  switch (key) {
-    case "red":
-      return { label: "Red", payout: 1, numbers: [...RED_NUMBERS] };
-    case "black":
-      return {
-        label: "Black",
-        payout: 1,
-        numbers: Array.from({ length: 36 }, (_, i) => i + 1).filter(
-          (n) => !RED_NUMBERS.has(n),
-        ),
-      };
-    case "odd":
-      return {
-        label: "Odd",
-        payout: 1,
-        numbers: Array.from({ length: 36 }, (_, i) => i + 1).filter(
-          (n) => n % 2 !== 0,
-        ),
-      };
-    case "even":
-      return {
-        label: "Even",
-        payout: 1,
-        numbers: Array.from({ length: 36 }, (_, i) => i + 1).filter(
-          (n) => n % 2 === 0,
-        ),
-      };
-    case "1-18":
-      return {
-        label: "1-18",
-        payout: 1,
-        numbers: Array.from({ length: 18 }, (_, i) => i + 1),
-      };
-    case "19-36":
-      return {
-        label: "19-36",
-        payout: 1,
-        numbers: Array.from({ length: 18 }, (_, i) => i + 19),
-      };
-    case "1st12":
-      return {
-        label: "1st 12",
-        payout: 2,
-        numbers: Array.from({ length: 12 }, (_, i) => i + 1),
-      };
-    case "2nd12":
-      return {
-        label: "2nd 12",
-        payout: 2,
-        numbers: Array.from({ length: 12 }, (_, i) => i + 13),
-      };
-    case "3rd12":
-      return {
-        label: "3rd 12",
-        payout: 2,
-        numbers: Array.from({ length: 12 }, (_, i) => i + 25),
-      };
-    case "col1":
-      return {
-        label: "Col 1",
-        payout: 2,
-        numbers: [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34],
-      };
-    case "col2":
-      return {
-        label: "Col 2",
-        payout: 2,
-        numbers: [2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35],
-      };
-    case "col3":
-      return {
-        label: "Col 3",
-        payout: 2,
-        numbers: [3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
-      };
-    default:
-      return { label: key, payout: 1, numbers: [] };
-  }
-}
-
-const CHIP_VALUES = [1, 5, 10, 25, 50];
-
-function NumberCell({
-  n,
-  bets,
-  onBet,
-  winningNumber,
-}: {
-  n: number;
-  bets: Map<string, number>;
-  onBet: (key: string) => void;
-  winningNumber: number | null;
-}) {
-  const color = getNumberColor(n);
-  const bet = bets.get(n.toString()) ?? 0;
-  const isWinner = winningNumber === n;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onBet(n.toString())}
-      className="relative w-9 h-9 rounded text-xs font-black transition-all hover:scale-110"
-      style={{
-        background:
-          color === "green"
-            ? "oklch(0.45 0.18 145)"
-            : color === "red"
-              ? "oklch(0.48 0.22 25)"
-              : "oklch(0.18 0.02 270)",
-        border: isWinner
-          ? "2px solid oklch(0.78 0.18 72)"
-          : "1px solid oklch(0.25 0.04 280)",
-        boxShadow: isWinner ? "0 0 12px oklch(0.78 0.18 72 / 0.8)" : "none",
-        color: "white",
-      }}
-      data-ocid="roulette.number.button"
-    >
-      {n}
-      {bet > 0 && (
-        <span
-          className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs font-black flex items-center justify-center"
-          style={{
-            background: "oklch(0.78 0.18 72)",
-            color: "#000",
-            fontSize: 9,
-          }}
-        >
-          {bet}
-        </span>
-      )}
-    </button>
-  );
-}
+const OUTSIDE_BETS: BetType[] = [
+  { label: "RED", numbers: [...RED_NUMBERS], payout: 1 },
+  {
+    label: "BLACK",
+    numbers: [
+      2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35,
+    ],
+    payout: 1,
+  },
+  {
+    label: "ODD",
+    numbers: [
+      1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35,
+    ],
+    payout: 1,
+  },
+  {
+    label: "EVEN",
+    numbers: [
+      2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36,
+    ],
+    payout: 1,
+  },
+  {
+    label: "1-18",
+    numbers: Array.from({ length: 18 }, (_, i) => i + 1),
+    payout: 1,
+  },
+  {
+    label: "19-36",
+    numbers: Array.from({ length: 18 }, (_, i) => i + 19),
+    payout: 1,
+  },
+  {
+    label: "1ST 12",
+    numbers: Array.from({ length: 12 }, (_, i) => i + 1),
+    payout: 2,
+  },
+  {
+    label: "2ND 12",
+    numbers: Array.from({ length: 12 }, (_, i) => i + 13),
+    payout: 2,
+  },
+  {
+    label: "3RD 12",
+    numbers: Array.from({ length: 12 }, (_, i) => i + 25),
+    payout: 2,
+  },
+];
 
 export default function RouletteGame({
   balance,
@@ -170,391 +74,402 @@ export default function RouletteGame({
   balance: bigint;
   onGameComplete: () => void;
 }) {
-  const [bets, setBets] = useState<Map<string, number>>(new Map());
-  const [chipValue, setChipValue] = useState(5);
+  const [bet, setBet] = useState("10");
+  const [selectedBet, setSelectedBet] = useState<BetType | null>(null);
+  const [straightUp, setStraightUp] = useState<number | null>(null);
   const [spinning, setSpinning] = useState(false);
-  const [winNumber, setWinNumber] = useState<number | null>(null);
-  const [spinDisplay, setSpinDisplay] = useState<number | null>(null);
-  const [winnings, setWinnings] = useState<number | null>(null);
+  const [result, setResult] = useState<{
+    number: number;
+    win: number;
+    msg: string;
+  } | null>(null);
+  const [wheelAngle, setWheelAngle] = useState(0);
+  const [ballAngle, setBallAngle] = useState(0);
 
   const { mutateAsync: recordOutcome, isPending } = useRecordGameOutcome();
-
-  const totalBet = Array.from(bets.values()).reduce((a, b) => a + b, 0);
-
-  const addBet = (key: string) => {
-    if (spinning) return;
-    setBets((prev) => {
-      const next = new Map(prev);
-      next.set(key, (next.get(key) ?? 0) + chipValue);
-      return next;
-    });
-  };
-
-  const clearBets = () => setBets(new Map());
+  const betNum = Number.parseInt(bet, 10) || 0;
 
   const handleSpin = async () => {
-    if (totalBet < 1) {
-      toast.error("Place at least 1 credit in bets");
+    if (!selectedBet && straightUp === null) {
+      toast.error("Select a bet first");
       return;
     }
-    if (BigInt(totalBet) > balance) {
+    if (betNum < 1) {
+      toast.error("Minimum bet is 1 credit");
+      return;
+    }
+    if (BigInt(betNum) > balance) {
       toast.error("Insufficient credits");
       return;
     }
 
     setSpinning(true);
-    setWinNumber(null);
-    setWinnings(null);
+    setResult(null);
+    const spinDeg = 1440 + Math.random() * 360;
+    setWheelAngle((prev) => prev + spinDeg);
+    setBallAngle((prev) => prev - spinDeg * 1.5);
+    await new Promise((r) => setTimeout(r, 2500));
 
-    // Rapid spin animation
-    const result = Math.floor(Math.random() * 37); // 0-36
-    let elapsed = 0;
-    const interval = setInterval(() => {
-      setSpinDisplay(Math.floor(Math.random() * 37));
-      elapsed += 120;
-      if (elapsed >= 3000) {
-        clearInterval(interval);
-        setSpinDisplay(result);
-        setWinNumber(result);
-        finalize(result);
-      }
-    }, 120);
-  };
-
-  const finalize = async (result: number) => {
-    let totalWin = 0;
-    for (const [key, amount] of bets.entries()) {
-      const info = getBetInfo(key);
-      if (info.numbers.includes(result)) {
-        totalWin += amount * (info.payout + 1); // return bet + winnings
-      }
-    }
-
-    const netGain = totalWin - totalBet;
-    setWinnings(netGain);
+    const landed = Math.floor(Math.random() * 37);
     setSpinning(false);
 
+    let win = 0;
+    let msg = "";
+    if (straightUp !== null && straightUp === landed) {
+      win = betNum * 35;
+      msg = `${landed} — Straight up wins! +${win} credits!`;
+    } else if (selectedBet?.numbers.includes(landed)) {
+      win = betNum * (selectedBet?.payout ?? 1);
+      msg = `${landed} — ${selectedBet?.label} wins! +${win} credits!`;
+    } else {
+      win = -betNum;
+      msg = `${landed} — ${landed === 0 ? "Zero!" : ""} You lost ${betNum} credits.`;
+    }
+
+    setResult({ number: landed, win, msg });
+
     try {
-      const won = totalWin > 0;
+      const won = win > 0;
       await recordOutcome({
         gameType: GameType.roulette,
-        bet: BigInt(totalBet),
+        bet: BigInt(betNum),
         won,
-        winAmount: BigInt(totalWin),
+        winAmount: BigInt(won ? win + betNum : 0),
       });
       onGameComplete();
-      if (won)
-        toast.success(`🎡 ${result} wins! You gained ${netGain} credits!`);
-      else
-        toast.error(`${result} — no winning bets. Lost ${totalBet} credits.`);
+      if (win > 0) toast.success(`🎰 ${msg}`);
+      else toast.error(msg);
     } catch (e: any) {
       toast.error(e?.message ?? "Error recording game");
     }
   };
 
-  // Number grid: col by col
-  const columns = Array.from({ length: 12 }, (_, col) => [
-    col * 3 + 3,
-    col * 3 + 2,
-    col * 3 + 1,
-  ]);
+  const numberColor = (n: number) =>
+    n === 0 ? "#2e7d32" : RED_NUMBERS.has(n) ? "#b71c1c" : "#1a1a1a";
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2
-          className="font-display font-black text-xl tracking-widest"
-          style={{ color: COLOR, textShadow: `0 0 12px ${COLOR}` }}
-        >
-          ROULETTE
-        </h2>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
-            BET: <span className="text-gold font-black">{totalBet}</span>
-          </span>
-          <span className="text-xs text-muted-foreground">
-            BAL:{" "}
-            <span className="text-gold font-black">{balance.toString()}</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Spin display */}
-      <AnimatePresence>
-        {spinDisplay !== null && (
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex flex-col items-center py-4"
+      {/* WHEEL */}
+      <div
+        className="rounded-2xl p-4 flex flex-col items-center gap-4"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 50%, #1b5e20 0%, #0d3b10 70%, #071a08 100%)",
+          border: "8px solid #3e2208",
+          boxShadow: "0 0 0 3px #8d5524, 0 8px 40px rgba(0,0,0,0.7)",
+        }}
+      >
+        {/* SVG WHEEL */}
+        <div className="relative" style={{ width: 220, height: 220 }}>
+          {/* Outer ring */}
+          <svg
+            width="220"
+            height="220"
+            viewBox="-110 -110 220 220"
+            className="absolute inset-0"
+            aria-label="Roulette wheel"
           >
-            <div
-              className="w-24 h-24 rounded-full flex items-center justify-center font-black text-4xl"
-              style={{
-                background:
-                  spinDisplay === 0
-                    ? "oklch(0.45 0.18 145)"
-                    : RED_NUMBERS.has(spinDisplay)
-                      ? "oklch(0.48 0.22 25)"
-                      : "oklch(0.18 0.02 270)",
-                border: `3px solid ${COLOR}`,
-                boxShadow: spinning
-                  ? `0 0 30px ${COLOR}, 0 0 60px ${COLOR}50`
-                  : winNumber !== null
-                    ? "0 0 30px oklch(0.78 0.18 72), 0 0 60px oklch(0.78 0.18 72 / 0.4)"
-                    : "none",
-                color: "white",
+            <title>Roulette Wheel</title>
+            {/* Wood surround */}
+            <circle r="108" fill="#5d3a1a" stroke="#8d5524" strokeWidth="3" />
+            <circle r="100" fill="#3e2208" stroke="#8d5524" strokeWidth="2" />
+            {/* Wheel segments */}
+            <motion.g
+              animate={{ rotate: wheelAngle }}
+              transition={{
+                duration: spinning ? 2.5 : 0.3,
+                ease: spinning ? [0.1, 0.8, 0.3, 1] : "easeOut",
               }}
-              data-ocid="roulette.result.panel"
             >
-              {spinDisplay}
-            </div>
-            {winNumber !== null && winnings !== null && (
-              <motion.p
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 font-black text-lg"
+              {WHEEL_ORDER.map((num, i) => {
+                const angle = (i / WHEEL_ORDER.length) * 360 - 90;
+                const a1 = ((angle - 180 / WHEEL_ORDER.length) * Math.PI) / 180;
+                const a2 = ((angle + 180 / WHEEL_ORDER.length) * Math.PI) / 180;
+                const r1 = 95;
+                const r2 = 55;
+                const x1 = Math.cos(a1) * r1;
+                const y1 = Math.sin(a1) * r1;
+                const x2 = Math.cos(a2) * r1;
+                const y2 = Math.sin(a2) * r1;
+                const x3 = Math.cos(a2) * r2;
+                const y3 = Math.sin(a2) * r2;
+                const x4 = Math.cos(a1) * r2;
+                const y4 = Math.sin(a1) * r2;
+                const fill =
+                  num === 0
+                    ? "#2e7d32"
+                    : RED_NUMBERS.has(num)
+                      ? "#c62828"
+                      : "#1a1a1a";
+                const mid = (angle * Math.PI) / 180;
+                const tx = Math.cos(mid) * 73;
+                const ty = Math.sin(mid) * 73;
+                return (
+                  <g key={num}>
+                    <path
+                      d={`M${x1},${y1} A${r1},${r1} 0 0,1 ${x2},${y2} L${x3},${y3} A${r2},${r2} 0 0,0 ${x4},${y4} Z`}
+                      fill={fill}
+                      stroke="#888"
+                      strokeWidth="0.5"
+                    />
+                    <text
+                      x={tx}
+                      y={ty}
+                      fill="white"
+                      fontSize="7"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      transform={`rotate(${angle + 90}, ${tx}, ${ty})`}
+                    >
+                      {num}
+                    </text>
+                  </g>
+                );
+              })}
+              {/* Inner felt circle */}
+              <circle r="53" fill="#1b5e20" stroke="#43a047" strokeWidth="2" />
+              <circle r="42" fill="#0d3b10" stroke="#2e7d32" strokeWidth="1" />
+            </motion.g>
+
+            {/* Ball */}
+            <motion.circle
+              r="6"
+              fill="#f5f5f5"
+              style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.8))" }}
+              animate={{ rotate: ballAngle }}
+              cx="82"
+              cy="0"
+              transform={`rotate(${ballAngle})`}
+              transition={{
+                duration: spinning ? 2.5 : 0.3,
+                ease: spinning ? [0.05, 0.9, 0.3, 1] : "easeOut",
+              }}
+            />
+
+            {/* Center pin */}
+            <circle r="8" fill="#c8a84b" stroke="#8d5524" strokeWidth="2" />
+            <circle r="4" fill="#ffd700" />
+          </svg>
+
+          {/* Pointer */}
+          <div
+            className="absolute top-0 left-1/2 -translate-x-1/2"
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: "6px solid transparent",
+              borderRight: "6px solid transparent",
+              borderTop: "16px solid #ffd700",
+              filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.5))",
+            }}
+          />
+
+          {/* Result number display */}
+          {result && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center font-black text-xl text-white"
                 style={{
-                  color:
-                    winnings > 0
-                      ? "oklch(0.78 0.18 72)"
-                      : "oklch(0.577 0.245 27)",
+                  background: numberColor(result.number),
+                  border: "3px solid #ffd700",
+                  boxShadow: "0 0 16px rgba(255,215,0,0.6)",
                 }}
               >
-                {winnings > 0
-                  ? `+${winnings} credits!`
-                  : `Lost ${totalBet} credits`}
-              </motion.p>
-            )}
+                {result.number}
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {spinning && (
+          <div className="text-sm font-black tracking-widest text-white/60 animate-pulse">
+            SPINNING...
+          </div>
+        )}
+      </div>
+
+      {/* BETTING MAT */}
+      <div
+        className="rounded-2xl p-4"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 50%, #1b5e20 0%, #0d3b10 100%)",
+          border: "4px solid #3e2208",
+          boxShadow: "0 0 0 2px #8d5524",
+        }}
+      >
+        {/* Number grid */}
+        <div className="mb-3">
+          <button
+            type="button"
+            className="w-full text-center py-2 rounded mb-1 cursor-pointer font-black text-sm transition-all"
+            onClick={() => {
+              setStraightUp(0);
+              setSelectedBet(null);
+            }}
+            style={{
+              background: straightUp === 0 ? "rgba(255,215,0,0.3)" : "#2e7d32",
+              border:
+                straightUp === 0
+                  ? "2px solid #ffd700"
+                  : "1px solid rgba(255,255,255,0.2)",
+              color: "white",
+            }}
+          >
+            0
+          </button>
+          <div
+            className="grid gap-0.5"
+            style={{ gridTemplateColumns: "repeat(12, 1fr)" }}
+          >
+            {Array.from({ length: 36 }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => {
+                  setStraightUp(n);
+                  setSelectedBet(null);
+                }}
+                className="py-1.5 rounded text-xs font-black text-white transition-all hover:brightness-125"
+                style={{
+                  background:
+                    straightUp === n ? "rgba(255,215,0,0.4)" : numberColor(n),
+                  border:
+                    straightUp === n
+                      ? "2px solid #ffd700"
+                      : "1px solid rgba(255,255,255,0.15)",
+                  fontSize: 10,
+                }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Outside bets */}
+        <div className="grid grid-cols-3 gap-1 mb-2">
+          {OUTSIDE_BETS.map((ob) => (
+            <button
+              key={ob.label}
+              type="button"
+              onClick={() => {
+                setSelectedBet(ob);
+                setStraightUp(null);
+              }}
+              className="py-2 rounded text-xs font-black text-white transition-all hover:brightness-125"
+              style={{
+                background:
+                  selectedBet?.label === ob.label
+                    ? "rgba(255,215,0,0.3)"
+                    : ob.label === "RED"
+                      ? "#b71c1c"
+                      : ob.label === "BLACK"
+                        ? "#1a1a1a"
+                        : "rgba(0,0,0,0.3)",
+                border:
+                  selectedBet?.label === ob.label
+                    ? "2px solid #ffd700"
+                    : "1px solid rgba(255,255,255,0.2)",
+              }}
+            >
+              {ob.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Selected bet display */}
+        {(selectedBet || straightUp !== null) && (
+          <div className="text-center text-xs text-white/60 mb-2">
+            Bet:{" "}
+            <span className="font-black text-white">
+              {straightUp !== null
+                ? `${straightUp} straight up (35:1)`
+                : `${selectedBet?.label} (${selectedBet?.payout}:1)`}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* RESULT */}
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl p-4 text-center font-black"
+            style={{
+              background:
+                result.win > 0 ? "rgba(27,94,32,0.4)" : "rgba(183,28,28,0.4)",
+              border: `1px solid ${result.win > 0 ? "rgba(102,187,106,0.5)" : "rgba(239,83,80,0.5)"}`,
+              color: result.win > 0 ? "#a5d6a7" : "#ef9a9a",
+            }}
+          >
+            {result.msg}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Chip selector */}
+      {/* CONTROLS */}
       <div
-        className="rounded-xl p-3"
+        className="rounded-2xl p-4 space-y-3"
         style={{
           background: "oklch(0.11 0.015 280)",
-          border: "1px solid oklch(0.18 0.025 280)",
+          border: "1px solid oklch(0.20 0.03 280)",
         }}
       >
-        <p className="text-xs text-muted-foreground mb-2 font-bold tracking-wider">
-          SELECT CHIP
-        </p>
-        <div className="flex gap-2">
-          {CHIP_VALUES.map((v) => (
+        <div className="flex gap-2 flex-wrap justify-center">
+          {QUICK_BETS.map((q) => (
             <button
-              key={v}
+              key={q}
               type="button"
-              onClick={() => setChipValue(v)}
-              className="w-10 h-10 rounded-full font-black text-sm transition-all"
-              style={{
-                background:
-                  chipValue === v
-                    ? "oklch(0.78 0.18 72)"
-                    : "oklch(0.20 0.03 278)",
-                color: chipValue === v ? "#000" : "oklch(0.60 0.02 270)",
-                border:
-                  chipValue === v
-                    ? "2px solid white"
-                    : "2px solid oklch(0.25 0.04 280)",
-                boxShadow:
-                  chipValue === v
-                    ? "0 0 10px oklch(0.78 0.18 72 / 0.6)"
-                    : "none",
-              }}
-              data-ocid="roulette.chip.button"
+              onClick={() => setBet(String(q))}
+              className="px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+              style={
+                betNum === q
+                  ? { background: "#c8a84b", color: "#1a1a1a" }
+                  : {
+                      background: "oklch(0.16 0.02 280)",
+                      color: "#aaa",
+                      border: "1px solid oklch(0.22 0.03 280)",
+                    }
+              }
             >
-              {v}
+              {q}
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Betting grid */}
-      <div
-        className="rounded-xl p-3 overflow-x-auto"
-        style={{
-          background: "oklch(0.11 0.015 280)",
-          border: `1px solid ${COLOR}30`,
-        }}
-      >
-        <div className="flex gap-1 min-w-max">
-          {/* Zero */}
-          <button
-            type="button"
-            onClick={() => addBet("0")}
-            className="w-9 h-28 rounded font-black text-sm flex items-center justify-center"
-            style={{
-              background: "oklch(0.45 0.18 145)",
-              border:
-                winNumber === 0
-                  ? "2px solid oklch(0.78 0.18 72)"
-                  : "1px solid oklch(0.25 0.04 280)",
-              color: "white",
-              writingMode: "vertical-rl",
-            }}
-            data-ocid="roulette.zero.button"
-          >
-            0 {(bets.get("0") ?? 0) > 0 ? `(${bets.get("0")})` : ""}
-          </button>
-
-          {/* Number grid - 3 rows */}
-          <div className="flex gap-0.5">
-            {columns.map((col, ci) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: stable column order
-              <div key={ci} className="flex flex-col gap-0.5">
-                {col.map((n) => (
-                  <NumberCell
-                    key={n}
-                    n={n}
-                    bets={bets}
-                    onBet={addBet}
-                    winningNumber={winNumber}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
-
-          {/* Column bets */}
-          <div className="flex flex-col gap-0.5 justify-between">
-            {["col3", "col2", "col1"].map((key) => {
-              const b = bets.get(key) ?? 0;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => addBet(key)}
-                  className="w-12 h-9 rounded text-xs font-black"
-                  style={{
-                    background: "oklch(0.20 0.04 120)",
-                    border: "1px solid oklch(0.35 0.08 140)",
-                    color: "oklch(0.7 0.18 140)",
-                  }}
-                  data-ocid="roulette.outside.button"
-                >
-                  2:1{b > 0 ? ` (${b})` : ""}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Dozen bets */}
-        <div className="flex gap-0.5 mt-0.5 ml-10">
-          {["1st12", "2nd12", "3rd12"].map((key) => {
-            const info = getBetInfo(key);
-            const b = bets.get(key) ?? 0;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => addBet(key)}
-                className="flex-1 h-8 rounded text-xs font-black"
-                style={{
-                  background: "oklch(0.16 0.025 278)",
-                  border: "1px solid oklch(0.25 0.04 280)",
-                  color: "oklch(0.70 0.02 270)",
-                }}
-                data-ocid="roulette.dozen.button"
-              >
-                {info.label}
-                {b > 0 ? ` (${b})` : ""}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Outside bets row */}
-        <div className="flex gap-0.5 mt-0.5 ml-10">
-          {["1-18", "even", "red", "black", "odd", "19-36"].map((key) => {
-            const info = getBetInfo(key);
-            const b = bets.get(key) ?? 0;
-            const isRed = key === "red";
-            const isBlack = key === "black";
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => addBet(key)}
-                className="flex-1 h-8 rounded text-xs font-black"
-                style={{
-                  background: isRed
-                    ? "oklch(0.48 0.22 25)"
-                    : isBlack
-                      ? "oklch(0.18 0.02 270)"
-                      : "oklch(0.16 0.025 278)",
-                  border: `1px solid ${
-                    isRed
-                      ? "oklch(0.577 0.245 27)"
-                      : isBlack
-                        ? "oklch(0.35 0.02 270)"
-                        : "oklch(0.25 0.04 280)"
-                  }`,
-                  color: isRed || isBlack ? "white" : "oklch(0.70 0.02 270)",
-                }}
-                data-ocid="roulette.outside.button"
-              >
-                {info.label}
-                {b > 0 ? ` (${b})` : ""}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-2">
-        <Button
-          onClick={clearBets}
-          disabled={spinning || bets.size === 0}
-          variant="outline"
-          className="flex-1 font-black tracking-wider"
-          data-ocid="roulette.clear.button"
-        >
-          CLEAR BETS
-        </Button>
-        <Button
-          onClick={handleSpin}
-          disabled={spinning || isPending || totalBet === 0}
-          className="flex-[2] py-4 font-black tracking-widest text-white"
+        <input
+          type="number"
+          min="1"
+          value={bet}
+          onChange={(e) => setBet(e.target.value)}
+          className="w-full rounded-lg px-3 py-2 text-center font-bold"
           style={{
-            background: spinning ? "oklch(0.25 0.04 280)" : COLOR,
-            boxShadow: spinning ? "none" : `0 0 20px ${COLOR}50`,
+            background: "oklch(0.09 0.01 280)",
+            color: "#c8a84b",
+            border: "1px solid oklch(0.22 0.03 280)",
+            outline: "none",
           }}
-          data-ocid="roulette.spin.button"
+        />
+        <button
+          type="button"
+          onClick={handleSpin}
+          disabled={spinning || isPending}
+          className="w-full py-4 rounded-xl font-black tracking-widest transition-all hover:brightness-110"
+          style={{
+            background: spinning ? "#333" : "#c8a84b",
+            color: spinning ? "#666" : "#1a1a1a",
+            boxShadow: spinning ? "none" : "0 0 24px rgba(200,168,75,0.4)",
+          }}
         >
-          {spinning ? "SPINNING..." : `🎡 SPIN (bet: ${totalBet})`}
-        </Button>
-      </div>
-
-      {/* Payout table */}
-      <div
-        className="rounded-xl p-3"
-        style={{
-          background: "oklch(0.10 0.012 280)",
-          border: "1px solid oklch(0.16 0.02 280)",
-        }}
-      >
-        <p className="text-xs font-black tracking-wider text-muted-foreground mb-2">
-          PAYOUTS
-        </p>
-        <div className="grid grid-cols-3 gap-1 text-xs">
-          {[
-            ["Straight (single)", "35:1"],
-            ["Red / Black", "1:1"],
-            ["Odd / Even", "1:1"],
-            ["1-18 / 19-36", "1:1"],
-            ["Dozen", "2:1"],
-            ["Column", "2:1"],
-          ].map(([name, pay]) => (
-            <div key={name} className="flex justify-between gap-1">
-              <span className="text-muted-foreground">{name}</span>
-              <span className="text-gold font-black">{pay}</span>
-            </div>
-          ))}
-        </div>
+          {spinning ? "SPINNING..." : "🎰 SPIN"}
+        </button>
       </div>
     </div>
   );

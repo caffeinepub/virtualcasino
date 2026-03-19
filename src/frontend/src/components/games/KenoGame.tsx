@@ -27,7 +27,6 @@ const PAYOUT_TABLE: Record<number, Record<number, number>> = {
 function getMultiplier(picks: number, matches: number): number {
   const table = PAYOUT_TABLE[picks];
   if (!table) return 0;
-  // Find highest matching payout threshold
   let best = 0;
   for (const [threshold, mult] of Object.entries(table)) {
     if (matches >= Number.parseInt(threshold, 10)) best = mult;
@@ -38,10 +37,7 @@ function getMultiplier(picks: number, matches: number): number {
 export default function KenoGame({
   balance,
   onGameComplete,
-}: {
-  balance: bigint;
-  onGameComplete: () => void;
-}) {
+}: { balance: bigint; onGameComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>("pick");
   const [bet, setBet] = useState("10");
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -80,38 +76,32 @@ export default function KenoGame({
       toast.error("Insufficient credits");
       return;
     }
-
-    // Draw 20 random numbers from 1-80
     const pool = Array.from({ length: 80 }, (_, i) => i + 1);
     const shuffled = pool.sort(() => Math.random() - 0.5);
     const drawnNums = new Set(shuffled.slice(0, 20));
     setDrawn(drawnNums);
     setPhase("drawn");
-
     const matchCount = [...selected].filter((n) => drawnNums.has(n)).length;
     const multiplier = getMultiplier(selected.size, matchCount);
     const net = multiplier > 0 ? betNum * multiplier - betNum : -betNum;
-
     setNetGain(net);
     setResultMsg(
       multiplier > 0
         ? `${matchCount} matches — ${multiplier}x! +${betNum * multiplier - betNum} credits!`
-        : `${matchCount} matches — no win. -${betNum} credits.`,
+        : `${matchCount} match${matchCount !== 1 ? "es" : ""} — not enough to win.`,
     );
     setPhase("result");
-
     try {
-      const won = net > 0;
-      const winAmount = won ? BigInt(betNum * multiplier) : BigInt(0);
+      const won = multiplier > 0;
       await recordOutcome({
         gameType: GameType.keno,
         bet: BigInt(betNum),
         won,
-        winAmount,
+        winAmount: won ? BigInt(net + betNum) : BigInt(0),
       });
       onGameComplete();
-      if (won) toast.success(`🎉 ${matchCount} matches!`);
-      else toast.error(`${matchCount} matches — no win.`);
+      if (won) toast.success(`🎉 ${net} credits!`);
+      else toast.error(`Lost ${betNum} credits.`);
     } catch (e: any) {
       toast.error(e?.message ?? "Error recording game");
     }
@@ -127,55 +117,132 @@ export default function KenoGame({
 
   return (
     <div className="space-y-4">
-      <div
-        className="rounded-xl p-4 space-y-3"
-        style={{
-          background: "oklch(0.11 0.015 280)",
-          border: `1px solid ${COLOR}40`,
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <h3
-            className="font-black text-lg tracking-widest"
-            style={{ color: COLOR }}
+      {/* Neon Keno sign */}
+      <div className="text-center">
+        <div
+          className="inline-block px-8 py-2 rounded"
+          style={{
+            background: "rgba(0,0,30,0.95)",
+            border: "3px solid oklch(0.62 0.22 240)",
+            boxShadow:
+              "0 0 30px oklch(0.55 0.28 240), 0 0 60px oklch(0.4 0.2 240)",
+          }}
+        >
+          <h2
+            className="text-3xl font-black tracking-widest"
+            style={{
+              color: COLOR,
+              textShadow: `0 0 20px ${COLOR}, 0 0 40px ${COLOR}`,
+            }}
           >
             KENO
-          </h3>
-          <span className="text-sm text-muted-foreground">
-            {selected.size}/10 selected
-          </span>
+          </h2>
+        </div>
+        <p className="text-sm mt-2" style={{ color: "rgba(255,255,255,0.5)" }}>
+          Pick up to 10 numbers — 20 balls drawn
+        </p>
+      </div>
+
+      {/* Casino display panel */}
+      <div
+        className="rounded-2xl p-4 space-y-4"
+        style={{
+          background: "linear-gradient(180deg, #05050f 0%, #0a0a1e 100%)",
+          border: "2px solid rgba(50,100,200,0.4)",
+          boxShadow: "inset 0 0 40px rgba(30,60,180,0.1)",
+        }}
+      >
+        {/* Stats row */}
+        <div className="flex justify-center gap-4 text-center">
+          <div
+            className="rounded-lg px-3 py-1"
+            style={{
+              background: "rgba(30,60,180,0.3)",
+              border: "1px solid rgba(50,100,200,0.4)",
+            }}
+          >
+            <p className="text-xs" style={{ color: "rgba(100,150,255,0.7)" }}>
+              PICKED
+            </p>
+            <p className="font-black" style={{ color: COLOR }}>
+              {selected.size}/10
+            </p>
+          </div>
+          <div
+            className="rounded-lg px-3 py-1"
+            style={{
+              background: "rgba(30,60,180,0.3)",
+              border: "1px solid rgba(50,100,200,0.4)",
+            }}
+          >
+            <p className="text-xs" style={{ color: "rgba(100,150,255,0.7)" }}>
+              DRAWN
+            </p>
+            <p className="font-black" style={{ color: "#4ade80" }}>
+              {drawn.size}
+            </p>
+          </div>
+          <div
+            className="rounded-lg px-3 py-1"
+            style={{
+              background: "rgba(30,60,180,0.3)",
+              border: "1px solid rgba(50,100,200,0.4)",
+            }}
+          >
+            <p className="text-xs" style={{ color: "rgba(100,150,255,0.7)" }}>
+              MATCHES
+            </p>
+            <p className="font-black" style={{ color: "#f5d76e" }}>
+              {[...selected].filter((n) => drawn.has(n)).length}
+            </p>
+          </div>
         </div>
 
-        {/* Number grid 10x8 */}
-        <div className="grid grid-cols-10 gap-1">
+        {/* 80-number ball grid */}
+        <div
+          className="grid gap-1"
+          style={{ gridTemplateColumns: "repeat(10, 1fr)" }}
+        >
           {Array.from({ length: 80 }, (_, i) => i + 1).map((n) => {
-            const isSelected = selected.has(n);
+            const isSel = selected.has(n);
             const isDrawn = drawn.has(n);
-            const isMatch = isSelected && isDrawn;
+            const isMatch = isSel && isDrawn;
             return (
               <motion.button
+                type="button"
                 key={n}
                 onClick={() => toggleNumber(n)}
-                whileTap={{ scale: 0.9 }}
-                disabled={phase !== "pick"}
-                className="aspect-square rounded text-xs font-black transition-all"
+                animate={isDrawn && !isSel ? { scale: [1, 1.3, 1] } : {}}
+                transition={{ duration: 0.4 }}
+                className="rounded-full aspect-square flex items-center justify-center font-black text-xs transition-all"
                 style={{
+                  fontSize: "9px",
                   background: isMatch
-                    ? "oklch(0.78 0.18 72)"
+                    ? "radial-gradient(circle, #f5d76e, #e67e22)"
                     : isDrawn
-                      ? "oklch(0.577 0.245 27 / 0.6)"
-                      : isSelected
-                        ? COLOR
-                        : "oklch(0.16 0.02 280)",
+                      ? "radial-gradient(circle, #4ade80, #16a34a)"
+                      : isSel
+                        ? `radial-gradient(circle, ${COLOR}, oklch(0.45 0.2 240))`
+                        : "radial-gradient(circle at 30% 30%, #2a2a4a, #151528)",
+                  border: isMatch
+                    ? "2px solid #f39c12"
+                    : isDrawn
+                      ? "1px solid #22c55e"
+                      : isSel
+                        ? `2px solid ${COLOR}`
+                        : "1px solid rgba(50,100,200,0.3)",
                   color:
-                    isSelected || isDrawn ? "white" : "oklch(0.55 0.05 280)",
-                  border: `1px solid ${isMatch ? "oklch(0.78 0.18 72)" : isSelected ? COLOR : "oklch(0.20 0.03 280)"}`,
+                    isMatch || isDrawn || isSel
+                      ? "white"
+                      : "rgba(150,180,255,0.7)",
                   boxShadow: isMatch
-                    ? "0 0 8px oklch(0.78 0.18 72)"
-                    : isSelected
-                      ? `0 0 6px ${COLOR}`
-                      : "none",
-                  fontSize: "10px",
+                    ? "0 0 8px #f39c12"
+                    : isDrawn
+                      ? "0 0 6px #22c55e"
+                      : isSel
+                        ? `0 0 8px ${COLOR}`
+                        : "none",
+                  cursor: phase === "pick" ? "pointer" : "default",
                 }}
               >
                 {n}
@@ -184,80 +251,119 @@ export default function KenoGame({
           })}
         </div>
 
-        {phase === "result" && (
-          <div
-            className="rounded-lg p-3 text-center font-black"
-            style={{
-              background:
-                netGain > 0
-                  ? "oklch(0.78 0.18 72 / 0.15)"
-                  : "oklch(0.577 0.245 27 / 0.15)",
-              color:
-                netGain > 0 ? "oklch(0.78 0.18 72)" : "oklch(0.577 0.245 27)",
-              border: `1px solid ${netGain > 0 ? "oklch(0.78 0.18 72 / 0.5)" : "oklch(0.577 0.245 27 / 0.5)"}`,
-            }}
-          >
-            {resultMsg}
+        {/* Drawn balls display */}
+        {drawn.size > 0 && (
+          <div className="space-y-1">
+            <p
+              className="text-xs font-black tracking-wider"
+              style={{ color: "rgba(100,150,255,0.7)" }}
+            >
+              DRAWN BALLS:
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {[...drawn]
+                .sort((a, b) => a - b)
+                .map((n) => (
+                  <motion.div
+                    key={n}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring" }}
+                    className="rounded-full w-7 h-7 flex items-center justify-center font-black text-xs"
+                    style={{
+                      background: selected.has(n)
+                        ? "radial-gradient(circle, #f5d76e, #e67e22)"
+                        : "radial-gradient(circle, #4ade80, #16a34a)",
+                      color: "white",
+                      fontSize: "9px",
+                      boxShadow: selected.has(n)
+                        ? "0 0 8px #f39c12"
+                        : "0 0 6px #22c55e",
+                    }}
+                  >
+                    {n}
+                  </motion.div>
+                ))}
+            </div>
           </div>
         )}
-      </div>
 
-      {phase === "pick" && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl p-4 space-y-3"
-          style={{
-            background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${COLOR}40`,
-          }}
-        >
-          <div className="flex flex-wrap gap-2">
-            {QUICK_BETS.map((q) => (
-              <button
-                type="button"
-                key={q}
-                onClick={() => setBet(String(q))}
-                className="px-3 py-1 rounded-full text-xs font-black"
-                style={{
-                  background: betNum === q ? COLOR : "oklch(0.16 0.02 280)",
-                  color: betNum === q ? "white" : "oklch(0.65 0.05 280)",
-                  border: `1px solid ${betNum === q ? COLOR : "oklch(0.22 0.03 280)"}`,
-                }}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              min="1"
-              value={bet}
-              onChange={(e) => setBet(e.target.value)}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleDraw}
-              disabled={isPending || selected.size === 0}
-              className="font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
+        {/* Bet input and controls */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {QUICK_BETS.map((q) => (
+            <button
+              type="button"
+              key={q}
+              onClick={() => setBet(String(q))}
+              disabled={phase !== "pick"}
+              className="rounded-full px-3 py-1.5 text-sm font-black transition-all"
+              style={{
+                background: betNum === q ? COLOR : "rgba(50,100,200,0.2)",
+                border: `2px solid ${betNum === q ? COLOR : "rgba(50,100,200,0.4)"}`,
+                color: betNum === q ? "white" : "rgba(100,150,255,0.8)",
+              }}
             >
-              DRAW!
-            </Button>
-          </div>
-        </motion.div>
-      )}
+              {q}
+            </button>
+          ))}
+        </div>
+        <Input
+          value={bet}
+          onChange={(e) => setBet(e.target.value)}
+          type="number"
+          min={1}
+          disabled={phase !== "pick"}
+          placeholder="Custom bet"
+          className="bg-black/30 border-blue-400/30 text-white text-center"
+        />
 
-      {phase === "result" && (
-        <Button
-          onClick={reset}
-          className="w-full font-black tracking-widest"
-          style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
-        >
-          PLAY AGAIN
-        </Button>
-      )}
+        {/* Result banner */}
+        {phase === "result" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-xl p-4 text-center space-y-2"
+            style={{
+              background:
+                netGain >= 0 ? "rgba(0,100,40,0.6)" : "rgba(120,0,0,0.6)",
+              border: `2px solid ${netGain >= 0 ? "rgba(0,255,100,0.4)" : "rgba(255,0,0,0.4)"}`,
+            }}
+          >
+            <p
+              className="font-black text-2xl"
+              style={{ color: netGain >= 0 ? "#4ade80" : "#f87171" }}
+            >
+              {netGain >= 0 ? `+${netGain}` : netGain} CREDITS
+            </p>
+            <p className="text-sm text-white/70">{resultMsg}</p>
+          </motion.div>
+        )}
+
+        {phase === "pick" ? (
+          <Button
+            onClick={handleDraw}
+            disabled={isPending || selected.size === 0}
+            className="w-full font-black tracking-widest py-6"
+            style={{
+              background: `linear-gradient(135deg, ${COLOR}, oklch(0.45 0.2 240))`,
+              boxShadow: `0 0 24px ${COLOR}`,
+            }}
+          >
+            DRAW BALLS!
+          </Button>
+        ) : (
+          <Button
+            onClick={reset}
+            className="w-full font-black tracking-widest py-6"
+            style={{
+              background: `linear-gradient(135deg, ${COLOR}, oklch(0.45 0.2 240))`,
+              boxShadow: `0 0 24px ${COLOR}`,
+            }}
+          >
+            PLAY AGAIN
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

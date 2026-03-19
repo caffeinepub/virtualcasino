@@ -1,16 +1,14 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
 import { useRecordGameOutcome } from "../../hooks/useQueries";
+import { RealisticCard } from "./RealisticCard";
 import { type Card, type Suit, createDeck, isRedSuit } from "./cardUtils";
 
 type Phase = "bet" | "result";
 type BetChoice = "player" | "banker" | "tie";
 
-const COLOR = "oklch(0.55 0.25 290)";
 const QUICK_BETS = [5, 10, 25, 50, 100];
 
 const baccaratValue = (rank: string): number => {
@@ -23,35 +21,6 @@ const handTotal = (cards: Card[]): number => {
   const sum = cards.reduce((acc, c) => acc + baccaratValue(c.rank), 0);
   return sum % 10;
 };
-
-function BaccaratCard({ card, index = 0 }: { card: Card; index?: number }) {
-  const isRed = isRedSuit(card.suit as Suit);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -20, rotateY: 90 }}
-      animate={{ opacity: 1, y: 0, rotateY: 0 }}
-      transition={{ delay: index * 0.2, duration: 0.35 }}
-      className="w-12 rounded-lg flex flex-col justify-between p-1 font-black text-xs shadow-lg select-none"
-      style={{
-        background: "white",
-        border: "1px solid #ccc",
-        color: isRed ? "#c0392b" : "#1a1a1a",
-        minWidth: "3rem",
-        minHeight: "4.5rem",
-      }}
-    >
-      <div className="flex flex-col leading-none">
-        <span>{card.rank}</span>
-        <span>{card.suit}</span>
-      </div>
-      <div className="self-center text-base">{card.suit}</div>
-      <div className="flex flex-col leading-none self-end rotate-180">
-        <span>{card.rank}</span>
-        <span>{card.suit}</span>
-      </div>
-    </motion.div>
-  );
-}
 
 export default function BaccaratGame({
   balance,
@@ -92,11 +61,9 @@ export default function BaccaratGame({
     let remaining = d2;
     let pCards = p0;
     let bCards = b0;
-
     const pTotal = handTotal(pCards);
     const bTotal = handTotal(bCards);
     const natural = pTotal >= 8 || bTotal >= 8;
-
     if (!natural) {
       let playerDrewThird = false;
       let playerThirdValue = -1;
@@ -107,7 +74,6 @@ export default function BaccaratGame({
         playerDrewThird = true;
         playerThirdValue = baccaratValue(drawn[0].rank);
       }
-
       const bt = handTotal(bCards);
       let bankerDraws = false;
       if (!playerDrewThird) {
@@ -131,15 +97,12 @@ export default function BaccaratGame({
 
     setPlayerCards(pCards);
     setBankerCards(bCards);
-
-    const finalPlayer = handTotal(pCards);
-    const finalBanker = handTotal(bCards);
-    const isTie = finalPlayer === finalBanker;
-    const playerWins = finalPlayer > finalBanker;
-
+    const fp = handTotal(pCards);
+    const fb = handTotal(bCards);
+    const isTie = fp === fb;
+    const playerWins = fp > fb;
     let net = 0;
     let msg = "";
-
     if (isTie) {
       if (betChoice === "tie") {
         net = betNum * 8;
@@ -165,11 +128,9 @@ export default function BaccaratGame({
         msg = `Banker wins — you lost ${betNum} credits.`;
       }
     }
-
     setNetGain(net);
     setResultMsg(msg);
     setPhase("result");
-
     try {
       const won = net > 0;
       const winAmount = won ? BigInt(net + betNum) : BigInt(0);
@@ -197,184 +158,268 @@ export default function BaccaratGame({
   };
 
   const betChoices: BetChoice[] = ["player", "banker", "tie"];
-  const betChoiceLabel: Record<BetChoice, string> = {
-    player: "Player (1:1)",
-    banker: "Banker (0.95:1)",
-    tie: "Tie (8:1)",
+  const betLabel: Record<BetChoice, string> = {
+    player: "PLAYER 1:1",
+    banker: "BANKER 0.95:1",
+    tie: "TIE 8:1",
+  };
+  const choiceColor: Record<BetChoice, string> = {
+    player: "#1565c0",
+    banker: "#b71c1c",
+    tie: "#2e7d32",
   };
 
   return (
-    <div className="space-y-4">
-      <AnimatePresence mode="wait">
-        {phase === "bet" && (
-          <motion.div
-            key="bet"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="rounded-xl p-5 space-y-4"
+    <div className="w-full max-w-2xl mx-auto">
+      {/* BACCARAT TABLE */}
+      <div
+        className="relative rounded-[2rem] overflow-hidden p-5"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 50%, #1b5e20 0%, #0d3b10 60%, #071a08 100%)",
+          border: "10px solid #3e2208",
+          boxShadow:
+            "0 0 0 3px #8d5524, 0 8px 40px rgba(0,0,0,0.7), inset 0 0 60px rgba(0,0,0,0.3)",
+          minHeight: 340,
+        }}
+      >
+        {/* TABLE LABEL */}
+        <div className="text-center mb-4">
+          <span
+            className="text-sm font-black tracking-[0.2em]"
             style={{
-              background: "oklch(0.11 0.015 280)",
-              border: `1px solid ${COLOR}40`,
+              color: "rgba(255,215,0,0.7)",
+              textShadow: "0 0 8px rgba(255,215,0,0.4)",
             }}
           >
-            <h3
-              className="font-black text-lg tracking-widest text-center"
-              style={{ color: COLOR }}
+            BACCARAT
+          </span>
+        </div>
+
+        {/* ZONE LAYOUT */}
+        <div className="grid grid-cols-3 gap-3 mb-4">
+          {/* PLAYER ZONE */}
+          <div
+            className="rounded-xl p-3 flex flex-col items-center"
+            style={{
+              background: "rgba(21,101,192,0.25)",
+              border:
+                betChoice === "player"
+                  ? "2px solid #1e88e5"
+                  : "1.5px solid rgba(21,101,192,0.4)",
+              boxShadow:
+                betChoice === "player"
+                  ? "0 0 16px rgba(30,136,229,0.4)"
+                  : "none",
+            }}
+          >
+            <span className="text-xs font-black tracking-widest text-blue-300 mb-2">
+              PLAYER
+            </span>
+            <div className="flex flex-wrap gap-1 justify-center min-h-[60px] items-center">
+              {phase === "bet" ? (
+                <div className="text-xs text-white/20 italic">cards here</div>
+              ) : (
+                playerCards.map((c, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable card positions
+                  <RealisticCard key={`p${i}`} card={c} index={i} small />
+                ))
+              )}
+            </div>
+            {phase === "result" && (
+              <span className="mt-2 text-xl font-black text-white">
+                {handTotal(playerCards)}
+              </span>
+            )}
+          </div>
+
+          {/* TIE ZONE */}
+          <div
+            className="rounded-xl p-3 flex flex-col items-center"
+            style={{
+              background: "rgba(46,125,50,0.2)",
+              border:
+                betChoice === "tie"
+                  ? "2px solid #43a047"
+                  : "1.5px solid rgba(46,125,50,0.3)",
+              boxShadow:
+                betChoice === "tie" ? "0 0 16px rgba(67,160,71,0.4)" : "none",
+            }}
+          >
+            <span className="text-xs font-black tracking-widest text-green-300 mb-1">
+              TIE
+            </span>
+            <span className="text-xs text-white/40">8:1</span>
+            {phase === "result" && (
+              <span
+                className="mt-2 text-lg font-black"
+                style={{
+                  color:
+                    netGain === 0 || (betChoice === "tie" && netGain > 0)
+                      ? "#a5d6a7"
+                      : "#fff",
+                }}
+              >
+                PUSH
+              </span>
+            )}
+          </div>
+
+          {/* BANKER ZONE */}
+          <div
+            className="rounded-xl p-3 flex flex-col items-center"
+            style={{
+              background: "rgba(183,28,28,0.25)",
+              border:
+                betChoice === "banker"
+                  ? "2px solid #ef5350"
+                  : "1.5px solid rgba(183,28,28,0.4)",
+              boxShadow:
+                betChoice === "banker"
+                  ? "0 0 16px rgba(239,83,80,0.4)"
+                  : "none",
+            }}
+          >
+            <span className="text-xs font-black tracking-widest text-red-300 mb-2">
+              BANKER
+            </span>
+            <div className="flex flex-wrap gap-1 justify-center min-h-[60px] items-center">
+              {phase === "bet" ? (
+                <div className="text-xs text-white/20 italic">cards here</div>
+              ) : (
+                bankerCards.map((c, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: stable card positions
+                  <RealisticCard key={`b${i}`} card={c} index={i} small />
+                ))
+              )}
+            </div>
+            {phase === "result" && (
+              <span className="mt-2 text-xl font-black text-white">
+                {handTotal(bankerCards)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* RESULT MESSAGE */}
+        <AnimatePresence>
+          {phase === "result" && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl p-3 text-center font-black"
+              style={{
+                background:
+                  netGain > 0
+                    ? "rgba(27,94,32,0.5)"
+                    : netGain < 0
+                      ? "rgba(183,28,28,0.4)"
+                      : "rgba(255,255,255,0.1)",
+                border: `1px solid ${netGain > 0 ? "rgba(102,187,106,0.5)" : netGain < 0 ? "rgba(239,83,80,0.5)" : "rgba(255,255,255,0.2)"}`,
+                color:
+                  netGain > 0 ? "#a5d6a7" : netGain < 0 ? "#ef9a9a" : "#fff",
+              }}
+            >
+              {resultMsg}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* BET PANEL */}
+      <div
+        className="mt-4 rounded-2xl p-5 space-y-4"
+        style={{
+          background: "oklch(0.11 0.015 280)",
+          border: "1px solid oklch(0.20 0.03 280)",
+        }}
+      >
+        {phase === "bet" ? (
+          <>
+            <p
+              className="text-xs font-black tracking-widest text-center"
+              style={{ color: "#c8a84b" }}
             >
               PLACE YOUR BET
-            </h3>
-
+            </p>
             <div className="grid grid-cols-3 gap-2">
-              {betChoices.map((choice) => (
+              {betChoices.map((c) => (
                 <button
+                  key={c}
                   type="button"
-                  key={choice}
-                  onClick={() => setBetChoice(choice)}
-                  className="rounded-lg py-3 font-black uppercase tracking-wider text-sm transition-all"
+                  onClick={() => setBetChoice(c)}
+                  className="py-3 rounded-xl font-black text-sm tracking-wider text-white transition-all hover:brightness-110"
                   style={{
                     background:
-                      betChoice === choice ? COLOR : "oklch(0.16 0.02 280)",
-                    border: `2px solid ${betChoice === choice ? COLOR : "oklch(0.22 0.03 280)"}`,
-                    color:
-                      betChoice === choice ? "white" : "oklch(0.65 0.05 280)",
+                      betChoice === c ? choiceColor[c] : "oklch(0.16 0.02 280)",
+                    border: `2px solid ${betChoice === c ? choiceColor[c] : "oklch(0.22 0.03 280)"}`,
                     boxShadow:
-                      betChoice === choice ? `0 0 16px ${COLOR}60` : "none",
+                      betChoice === c ? `0 0 16px ${choiceColor[c]}60` : "none",
                   }}
                 >
-                  {betChoiceLabel[choice]}
+                  {betLabel[c]}
                 </button>
               ))}
             </div>
-
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 flex-wrap justify-center">
               {QUICK_BETS.map((q) => (
                 <button
-                  type="button"
                   key={q}
+                  type="button"
                   onClick={() => setBet(String(q))}
-                  className="px-3 py-1 rounded-full text-xs font-black tracking-wider"
-                  style={{
-                    background: betNum === q ? COLOR : "oklch(0.16 0.02 280)",
-                    color: betNum === q ? "white" : "oklch(0.65 0.05 280)",
-                    border: `1px solid ${betNum === q ? COLOR : "oklch(0.22 0.03 280)"}`,
-                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+                  style={
+                    betNum === q
+                      ? { background: "#c8a84b", color: "#1a1a1a" }
+                      : {
+                          background: "oklch(0.16 0.02 280)",
+                          color: "#aaa",
+                          border: "1px solid oklch(0.22 0.03 280)",
+                        }
+                  }
                 >
                   {q}
                 </button>
               ))}
             </div>
-
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                min="1"
-                value={bet}
-                onChange={(e) => setBet(e.target.value)}
-                className="flex-1"
-                placeholder="Bet amount"
-              />
-              <Button
-                onClick={handleDeal}
-                disabled={isPending}
-                className="font-black tracking-widest"
-                style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
-              >
-                DEAL
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {phase === "result" && (
-          <motion.div
-            key="result"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
-            <div
-              className="rounded-xl p-4 space-y-4"
+            <input
+              type="number"
+              min="1"
+              value={bet}
+              onChange={(e) => setBet(e.target.value)}
+              className="w-full rounded-lg px-3 py-2 text-center font-bold"
               style={{
-                background: "oklch(0.11 0.015 280)",
-                border: `1px solid ${COLOR}40`,
+                background: "oklch(0.09 0.01 280)",
+                color: "#c8a84b",
+                border: "1px solid oklch(0.22 0.03 280)",
+                outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleDeal}
+              disabled={isPending}
+              className="w-full py-4 rounded-xl font-black tracking-widest transition-all hover:brightness-110"
+              style={{
+                background: "#c8a84b",
+                color: "#1a1a1a",
+                boxShadow: "0 0 24px rgba(200,168,75,0.4)",
               }}
             >
-              <div className="grid grid-cols-2 gap-4">
-                <div
-                  className="rounded-lg p-3"
-                  style={{
-                    background: "oklch(0.14 0.02 280)",
-                    border: `1px solid ${COLOR}30`,
-                  }}
-                >
-                  <div className="text-xs font-black tracking-wider text-muted-foreground mb-2">
-                    PLAYER — {handTotal(playerCards)}
-                  </div>
-                  <div className="flex gap-1 flex-wrap">
-                    {playerCards.map((c, i) => (
-                      <BaccaratCard
-                        key={`p-${c.rank}-${c.suit}`}
-                        card={c}
-                        index={i}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div
-                  className="rounded-lg p-3"
-                  style={{
-                    background: "oklch(0.14 0.02 280)",
-                    border: `1px solid ${COLOR}30`,
-                  }}
-                >
-                  <div className="text-xs font-black tracking-wider text-muted-foreground mb-2">
-                    BANKER — {handTotal(bankerCards)}
-                  </div>
-                  <div className="flex gap-1 flex-wrap">
-                    {bankerCards.map((c, i) => (
-                      <BaccaratCard
-                        key={`b-${c.rank}-${c.suit}`}
-                        card={c}
-                        index={i}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="rounded-lg p-3 text-center font-black text-lg"
-                style={{
-                  background:
-                    netGain > 0
-                      ? "oklch(0.78 0.18 72 / 0.15)"
-                      : netGain < 0
-                        ? "oklch(0.577 0.245 27 / 0.15)"
-                        : "oklch(0.16 0.02 280)",
-                  color:
-                    netGain > 0
-                      ? "oklch(0.78 0.18 72)"
-                      : netGain < 0
-                        ? "oklch(0.577 0.245 27)"
-                        : COLOR,
-                  border: `1px solid ${netGain > 0 ? "oklch(0.78 0.18 72 / 0.5)" : netGain < 0 ? "oklch(0.577 0.245 27 / 0.5)" : `${COLOR}40`}`,
-                }}
-              >
-                {resultMsg}
-              </div>
-            </div>
-
-            <Button
-              onClick={reset}
-              className="w-full font-black tracking-widest"
-              style={{ background: COLOR, boxShadow: `0 0 12px ${COLOR}60` }}
-            >
-              PLAY AGAIN
-            </Button>
-          </motion.div>
+              DEAL
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={reset}
+            className="w-full py-4 rounded-xl font-black tracking-widest transition-all hover:brightness-110"
+            style={{ background: "#c8a84b", color: "#1a1a1a" }}
+          >
+            PLAY AGAIN
+          </button>
         )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

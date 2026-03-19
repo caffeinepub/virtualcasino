@@ -1,13 +1,10 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { GameType } from "../../backend.d";
 import { useRecordGameOutcome } from "../../hooks/useQueries";
 
 const SYMBOLS = ["🍒", "🍋", "🍊", "🍇", "💎", "7️⃣", "⭐", "🔔"];
-const COLOR = "oklch(0.65 0.28 340)";
 const QUICK_BETS = [1, 5, 10, 25, 50];
 
 function getPayoutMultiplier(reels: string[]): number {
@@ -15,7 +12,7 @@ function getPayoutMultiplier(reels: string[]): number {
   if (a === "7️⃣" && b === "7️⃣" && c === "7️⃣") return 10;
   if (a === "💎" && b === "💎" && c === "💎") return 7;
   if ((a === "⭐" || a === "🔔") && a === b && b === c) return 5;
-  if (a === b && b === c) return 3; // three matching fruit
+  if (a === b && b === c) return 3;
   if (a === "7️⃣" && b === "7️⃣") return 2;
   if (b === "7️⃣" && c === "7️⃣") return 2;
   if (a === "7️⃣" && c === "7️⃣") return 2;
@@ -31,53 +28,71 @@ function getPayoutLabel(mult: number): string {
   return `${mult}× win!`;
 }
 
-function Reel({
-  symbol,
-  spinning,
-  stopped,
-}: {
-  symbol: string;
-  spinning: boolean;
-  stopped: boolean;
-}) {
+function Reel({ symbol, spinning }: { symbol: string; spinning: boolean }) {
   return (
     <div
-      className="w-20 h-24 rounded-xl flex items-center justify-center overflow-hidden relative"
+      className="relative overflow-hidden"
       style={{
-        background: "oklch(0.09 0.012 280)",
-        border: `2px solid ${stopped && !spinning ? COLOR : "oklch(0.22 0.03 275)"}`,
-        boxShadow: stopped && !spinning ? `0 0 16px ${COLOR}50` : "none",
+        width: 80,
+        height: 100,
+        background: "#f5f5f5",
+        border: "3px solid #bbb",
+        borderRadius: 8,
+        boxShadow:
+          "inset 0 4px 16px rgba(0,0,0,0.25), inset 0 -4px 8px rgba(0,0,0,0.15)",
       }}
     >
+      {/* Reel lines */}
+      <div
+        className="absolute top-[33%] left-0 right-0 h-px"
+        style={{ background: "rgba(0,0,0,0.1)" }}
+      />
+      <div
+        className="absolute top-[67%] left-0 right-0 h-px"
+        style={{ background: "rgba(0,0,0,0.1)" }}
+      />
+      {/* Payline highlight */}
+      <div
+        className="absolute inset-x-0 top-[33%] bottom-[33%]"
+        style={{
+          background: "rgba(255,215,0,0.1)",
+          borderTop: "1px solid rgba(255,215,0,0.4)",
+          borderBottom: "1px solid rgba(255,215,0,0.4)",
+        }}
+      />
+
       {spinning ? (
         <motion.div
+          className="absolute inset-0 flex flex-col items-center"
           animate={{ y: ["-100%", "100%"] }}
           transition={{
-            duration: 0.12,
+            duration: 0.1,
             repeat: Number.POSITIVE_INFINITY,
             ease: "linear",
           }}
-          className="flex flex-col items-center"
         >
           {SYMBOLS.concat(SYMBOLS).map((s, i) => (
             <div
-              key={s + String(i)}
-              className="text-4xl h-24 flex items-center justify-center"
+              // biome-ignore lint/suspicious/noArrayIndexKey: spinning animation strip
+              key={i}
+              className="flex-shrink-0 flex items-center justify-center"
+              style={{ height: 50, fontSize: 32 }}
             >
               {s}
             </div>
           ))}
         </motion.div>
       ) : (
-        <motion.span
+        <motion.div
           key={symbol}
-          initial={{ scale: 1.4, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.25 }}
-          className="text-5xl"
+          className="absolute inset-0 flex items-center justify-center"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          style={{ fontSize: 44 }}
         >
           {symbol}
-        </motion.span>
+        </motion.div>
       )}
     </div>
   );
@@ -96,10 +111,12 @@ export default function SlotsGame({
   const [result, setResult] = useState<{ mult: number; win: number } | null>(
     null,
   );
+  const [leverPulled, setLeverPulled] = useState(false);
   const spinningRef = useRef(false);
 
   const { mutateAsync: recordOutcome, isPending } = useRecordGameOutcome();
   const betNum = Number.parseInt(bet, 10) || 0;
+  const anySpinning = spinning.some(Boolean);
 
   const handleSpin = async () => {
     if (spinningRef.current) return;
@@ -114,6 +131,8 @@ export default function SlotsGame({
 
     spinningRef.current = true;
     setResult(null);
+    setLeverPulled(true);
+    setTimeout(() => setLeverPulled(false), 400);
     setSpinning([true, true, true]);
 
     const finalSymbols = [
@@ -122,8 +141,7 @@ export default function SlotsGame({
       SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
     ];
 
-    // Stop reels one by one
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 900));
     setSpinning([false, true, true]);
     setReels([finalSymbols[0], "🎰", "🎰"]);
 
@@ -158,163 +176,240 @@ export default function SlotsGame({
     }
   };
 
-  const anySpinning = spinning.some(Boolean);
-
   return (
-    <div className="w-full max-w-lg mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2
-          className="font-display font-black text-xl tracking-widest"
-          style={{ color: COLOR, textShadow: `0 0 12px ${COLOR}` }}
-        >
-          SLOTS
-        </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">BALANCE</span>
-          <span className="font-black text-gold">{balance.toString()}</span>
-        </div>
-      </div>
-
-      {/* Cabinet */}
+    <div className="w-full max-w-sm mx-auto">
+      {/* MACHINE CABINET */}
       <div
-        className="rounded-2xl p-6"
+        className="rounded-3xl overflow-hidden relative"
         style={{
-          background:
-            "linear-gradient(180deg, oklch(0.14 0.03 290), oklch(0.09 0.015 280))",
-          border: `2px solid ${COLOR}60`,
-          boxShadow: `0 0 30px ${COLOR}20, inset 0 1px 0 oklch(1 0 0 / 0.05)`,
+          background: "linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%)",
+          border: "4px solid #444",
+          boxShadow:
+            "0 0 0 2px #666, 0 8px 40px rgba(0,0,0,0.8), inset 0 2px 0 rgba(255,255,255,0.1)",
         }}
       >
-        {/* Screen */}
+        {/* NEON MARQUEE */}
         <div
-          className="rounded-xl p-4 mb-4"
+          className="px-4 py-3 text-center font-black text-xl tracking-[0.3em] relative overflow-hidden"
           style={{
-            background: "oklch(0.07 0.01 280)",
-            border: `1px solid ${COLOR}40`,
-            boxShadow: `inset 0 0 20px ${COLOR}15`,
+            background: "linear-gradient(180deg, #0d0d0d, #1a0020)",
+            borderBottom: "2px solid #ff00aa",
+            color: "#ff00aa",
+            textShadow:
+              "0 0 10px #ff00aa, 0 0 30px #ff00aa, 0 0 60px #ff00aa80",
           }}
         >
-          <div className="flex gap-3 justify-center">
-            <Reel
-              key="left"
-              symbol={reels[0]}
-              spinning={spinning[0]}
-              stopped={!spinning[0]}
-            />
-            <Reel
-              key="center"
-              symbol={reels[1]}
-              spinning={spinning[1]}
-              stopped={!spinning[1]}
-            />
-            <Reel
-              key="right"
-              symbol={reels[2]}
-              spinning={spinning[2]}
-              stopped={!spinning[2]}
-            />
-          </div>
-
-          {/* Payline indicator */}
-          <div
-            className="mt-2 h-0.5 mx-4"
-            style={{
-              background: `linear-gradient(90deg, transparent, ${COLOR}, transparent)`,
-              opacity: 0.6,
-            }}
-          />
+          <span>★ CPM SLOTS ★</span>
         </div>
 
-        {/* Result */}
+        {/* CHROME BEZEL WITH REELS */}
+        <div className="flex items-center gap-3 p-4">
+          {/* LEFT PANEL */}
+          <div className="flex-1">
+            {/* Reel window */}
+            <div
+              className="rounded-xl p-3"
+              style={{
+                background: "linear-gradient(180deg, #333 0%, #222 100%)",
+                border: "3px solid #555",
+                boxShadow: "inset 0 4px 12px rgba(0,0,0,0.6), 0 2px 0 #777",
+              }}
+            >
+              {/* Payline indicator */}
+              <div
+                className="text-center text-[10px] font-black tracking-widest mb-2"
+                style={{ color: "#ffd700", textShadow: "0 0 8px #ffd700" }}
+              >
+                ← PAYLINE →
+              </div>
+              <div className="flex gap-2 justify-center">
+                {reels.map((sym, i) => (
+                  <Reel // biome-ignore lint/suspicious/noArrayIndexKey: reel positions are fixed
+                    key={i}
+                    symbol={sym}
+                    spinning={spinning[i]}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* LED DISPLAY */}
+            <div
+              className="mt-3 rounded-lg px-4 py-2 flex justify-between items-center"
+              style={{
+                background: "#0a0a0a",
+                border: "2px solid #333",
+                fontFamily: "monospace",
+              }}
+            >
+              <div>
+                <div className="text-[9px] text-green-500/60 tracking-widest">
+                  CREDITS
+                </div>
+                <div
+                  className="text-green-400 font-black text-sm"
+                  style={{ textShadow: "0 0 6px #00ff00" }}
+                >
+                  {balance.toString().padStart(6, "0")}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-[9px] text-yellow-500/60 tracking-widest">
+                  WIN
+                </div>
+                <div
+                  className="text-yellow-400 font-black text-sm"
+                  style={{ textShadow: "0 0 6px #ffd700" }}
+                >
+                  {result && result.win > 0
+                    ? String(result.win).padStart(4, "0")
+                    : "0000"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* LEVER */}
+          <div className="flex flex-col items-center" style={{ width: 28 }}>
+            <div
+              className="rounded-full"
+              style={{
+                width: 18,
+                height: 18,
+                background:
+                  "radial-gradient(circle at 35% 35%, #ff4444, #aa0000)",
+                border: "2px solid #660000",
+                boxShadow: "0 0 8px #ff000060",
+              }}
+            />
+            <motion.div
+              animate={
+                leverPulled ? { scaleY: 1.2, originY: 0 } : { scaleY: 1 }
+              }
+              transition={{ duration: 0.2 }}
+              style={{
+                width: 8,
+                height: 80,
+                background: "linear-gradient(90deg, #888, #ccc, #888)",
+                borderRadius: 4,
+                boxShadow: "2px 0 4px rgba(0,0,0,0.5)",
+              }}
+            />
+            <div
+              className="rounded-sm"
+              style={{
+                width: 20,
+                height: 10,
+                background: "linear-gradient(180deg, #888, #555)",
+                border: "1px solid #333",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* RESULT DISPLAY */}
         <AnimatePresence>
           {result !== null && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="text-center mb-4"
-              data-ocid="slots.result.panel"
+              className="mx-4 mb-2 py-2 rounded-lg text-center font-black text-sm"
+              style={{
+                background:
+                  result.mult === 0
+                    ? "rgba(183,28,28,0.3)"
+                    : "rgba(255,215,0,0.2)",
+                border: `1px solid ${result.mult === 0 ? "rgba(239,83,80,0.5)" : "rgba(255,215,0,0.6)"}`,
+                color: result.mult === 0 ? "#ef5350" : "#ffd700",
+                textShadow: result.mult > 0 ? "0 0 8px #ffd700" : "none",
+              }}
             >
-              <p
-                className="font-black text-2xl"
-                style={{
-                  color:
-                    result.mult === 0
-                      ? "oklch(0.577 0.245 27)"
-                      : "oklch(0.78 0.18 72)",
-                }}
-              >
-                {getPayoutLabel(result.mult)}
-              </p>
-              {result.mult > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {result.win >= 0 ? "+" : ""}
-                  {result.win} credits
-                </p>
+              {getPayoutLabel(result.mult)}
+              {result.win !== 0 && (
+                <span className="ml-2 text-xs">
+                  ({result.win > 0 ? "+" : ""}
+                  {result.win} cr)
+                </span>
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Bet controls */}
-        <div className="space-y-3">
+        {/* BET CONTROLS */}
+        <div className="px-4 pb-4 space-y-3">
           <div className="flex gap-2 justify-center flex-wrap">
             {QUICK_BETS.map((q) => (
               <button
                 key={q}
                 type="button"
                 onClick={() => setBet(q.toString())}
-                className="px-3 py-1.5 rounded-lg text-xs font-black transition-all"
+                disabled={anySpinning}
+                className="px-3 py-1.5 rounded text-xs font-black transition-all"
                 style={
                   bet === q.toString()
-                    ? {
-                        background: COLOR,
-                        color: "#fff",
-                        boxShadow: `0 0 10px ${COLOR}60`,
-                      }
+                    ? { background: "#ffd700", color: "#1a1a1a" }
                     : {
-                        background: "oklch(0.16 0.025 278)",
-                        color: "oklch(0.60 0.02 270)",
-                        border: "1px solid oklch(0.22 0.03 275)",
+                        background: "#2a2a2a",
+                        color: "#888",
+                        border: "1px solid #444",
                       }
                 }
-                disabled={anySpinning}
-                data-ocid="slots.quickbet.button"
               >
                 {q}
               </button>
             ))}
           </div>
-          <Input
+          <input
             type="number"
             min="1"
             value={bet}
             onChange={(e) => setBet(e.target.value)}
             disabled={anySpinning}
-            className="bg-secondary border-border text-foreground font-bold text-center"
-            data-ocid="slots.bet.input"
+            className="w-full rounded-lg px-3 py-2 text-center font-bold text-sm"
+            style={{
+              background: "#0a0a0a",
+              color: "#ffd700",
+              border: "2px solid #333",
+              fontFamily: "monospace",
+              outline: "none",
+            }}
           />
-          <Button
+          <button
+            type="button"
             onClick={handleSpin}
             disabled={anySpinning || isPending}
-            className="w-full py-5 font-black tracking-widest text-white text-lg"
+            className="w-full py-3 rounded-xl font-black tracking-widest text-black text-sm transition-all hover:brightness-110 active:scale-95"
             style={{
               background: anySpinning
-                ? "oklch(0.22 0.04 280)"
-                : `linear-gradient(135deg, ${COLOR}, oklch(0.55 0.25 290))`,
-              boxShadow: anySpinning ? "none" : `0 0 25px ${COLOR}50`,
+                ? "#333"
+                : "linear-gradient(180deg, #ffd700, #f5a623)",
+              color: anySpinning ? "#666" : "#1a1a1a",
+              boxShadow: anySpinning
+                ? "none"
+                : "0 0 20px rgba(255,215,0,0.4), 0 4px 0 #b8860b",
             }}
-            data-ocid="slots.spin.button"
           >
             {anySpinning ? "🎰 SPINNING..." : `🎰 SPIN — ${betNum} CREDITS`}
-          </Button>
+          </button>
+        </div>
+
+        {/* COIN TRAY */}
+        <div
+          className="mx-4 mb-4 rounded-lg py-2 text-center text-[10px] text-gray-600 font-black tracking-widest"
+          style={{
+            background: "#111",
+            border: "2px solid #333",
+            boxShadow: "inset 0 4px 8px rgba(0,0,0,0.5)",
+          }}
+        >
+          COIN TRAY
         </div>
       </div>
 
-      {/* Payout table */}
+      {/* PAYTABLE */}
       <div
-        className="rounded-xl p-3"
+        className="mt-4 rounded-xl p-3"
         style={{
           background: "oklch(0.10 0.012 280)",
           border: "1px solid oklch(0.16 0.02 280)",
@@ -330,11 +425,13 @@ export default function SlotsGame({
             ["⭐/🔔 × 3", "5×"],
             ["Fruit × 3", "3×"],
             ["7️⃣ 7️⃣ any", "2×"],
-            ["Any pair", "1× (push)"],
+            ["Any pair", "1×"],
           ].map(([combo, pay]) => (
             <div key={combo} className="flex justify-between">
               <span className="text-muted-foreground">{combo}</span>
-              <span className="text-gold font-black">{pay}</span>
+              <span className="font-black" style={{ color: "#ffd700" }}>
+                {pay}
+              </span>
             </div>
           ))}
         </div>

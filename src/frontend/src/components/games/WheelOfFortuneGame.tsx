@@ -8,7 +8,7 @@ import { useRecordGameOutcome } from "../../hooks/useQueries";
 
 type Phase = "bet" | "spinning" | "result";
 
-const COLOR = "oklch(0.78 0.18 72)";
+const GOLD = "oklch(0.78 0.18 72)";
 const QUICK_BETS = [5, 10, 25, 50, 100];
 const SEGMENTS = [1, 2, 0, 3, 0, 5, 0, 2, 10, 0, 2, 40];
 const SEG_COLORS = [
@@ -35,13 +35,9 @@ const conicGradient = SEGMENTS.map((_mult, i) => {
 export default function WheelOfFortuneGame({
   balance,
   onGameComplete,
-}: {
-  balance: bigint;
-  onGameComplete: () => void;
-}) {
+}: { balance: bigint; onGameComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>("bet");
   const [bet, setBet] = useState("10");
-  const [spinning, setSpinning] = useState(false);
   const [landedIndex, setLandedIndex] = useState<number | null>(null);
   const [spinDeg, setSpinDeg] = useState(0);
   const [netGain, setNetGain] = useState(0);
@@ -59,7 +55,6 @@ export default function WheelOfFortuneGame({
       toast.error("Insufficient credits");
       return;
     }
-
     const resultIdx = Math.floor(Math.random() * SEGMENTS.length);
     const segmentDeg = 360 / SEGMENTS.length;
     const targetDeg =
@@ -67,16 +62,10 @@ export default function WheelOfFortuneGame({
       1800 +
       (SEGMENTS.length - resultIdx) * segmentDeg +
       segmentDeg / 2;
-
-    setSpinning(true);
     setPhase("spinning");
     setSpinDeg(targetDeg);
-
     await new Promise((r) => setTimeout(r, 3500));
-
-    setSpinning(false);
     setLandedIndex(resultIdx);
-
     const multiplier = SEGMENTS[resultIdx];
     let net = 0;
     let msg = "";
@@ -87,11 +76,9 @@ export default function WheelOfFortuneGame({
       net = -betNum;
       msg = "LOSE! Better luck next spin.";
     }
-
     setNetGain(net);
     setResultMsg(msg);
     setPhase("result");
-
     try {
       const won = net > 0;
       const winAmount = won ? BigInt(net + betNum) : BigInt(0);
@@ -118,154 +105,277 @@ export default function WheelOfFortuneGame({
 
   return (
     <div className="space-y-4">
-      <div
-        className="rounded-xl p-4 flex flex-col items-center gap-4"
-        style={{
-          background: "oklch(0.11 0.015 280)",
-          border: `1px solid ${COLOR}40`,
-        }}
-      >
-        <h3
-          className="font-black text-lg tracking-widest"
-          style={{ color: COLOR }}
+      {/* Neon marquee title */}
+      <div className="text-center relative">
+        <div
+          className="inline-block px-6 py-2 rounded-full"
+          style={{
+            background: "rgba(0,0,0,0.8)",
+            border: "2px solid oklch(0.78 0.18 72)",
+            boxShadow:
+              "0 0 30px oklch(0.7 0.25 72), 0 0 60px oklch(0.5 0.2 72)",
+          }}
         >
-          WHEEL OF FORTUNE
-        </h3>
-
-        <div className="relative">
-          <div
-            className="absolute left-1/2 -translate-x-1/2 w-0 h-0 z-10"
+          <h2
+            className="text-xl font-black tracking-widest"
             style={{
-              top: "-4px",
-              borderLeft: "10px solid transparent",
-              borderRight: "10px solid transparent",
-              borderTop: `20px solid ${COLOR}`,
-              filter: `drop-shadow(0 0 6px ${COLOR})`,
+              color: GOLD,
+              textShadow: `0 0 20px ${GOLD}, 0 0 40px ${GOLD}`,
             }}
-          />
-          <motion.div
-            animate={{ rotate: spinDeg }}
-            transition={{ duration: 3.5, ease: [0.17, 0.67, 0.35, 0.99] }}
-            className="w-48 h-48 rounded-full overflow-hidden"
-            style={{
-              background: `conic-gradient(${conicGradient})`,
-              border: `4px solid ${COLOR}`,
-              boxShadow: `0 0 20px ${COLOR}60`,
-            }}
-          />
+          >
+            WHEEL OF FORTUNE
+          </h2>
         </div>
-
-        <div className="flex flex-wrap justify-center gap-1">
-          {SEGMENTS.map((mult, i) => (
-            <div
-              key={`seg-${i}-${mult}`}
-              className="px-2 py-1 rounded text-xs font-black"
-              style={{
-                background: landedIndex === i ? COLOR : SEG_COLORS[i],
-                color: "white",
-                opacity: landedIndex !== null && landedIndex !== i ? 0.5 : 1,
-                transform: landedIndex === i ? "scale(1.2)" : "scale(1)",
-                transition: "all 0.3s",
-                boxShadow: landedIndex === i ? `0 0 12px ${COLOR}` : "none",
-              }}
-            >
-              {mult === 0 ? "LOSE" : `${mult}x`}
-            </div>
-          ))}
+        {/* Marquee dots */}
+        <div className="flex justify-center gap-1.5 mt-2">
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map(
+            (dotId) => (
+              <motion.div
+                key={dotId}
+                animate={{ opacity: [1, 0.2, 1] }}
+                transition={{
+                  repeat: Number.POSITIVE_INFINITY,
+                  delay: dotId * 0.1,
+                  duration: 1.5,
+                }}
+                className="w-2 h-2 rounded-full"
+                style={{ background: dotId % 2 === 0 ? "#f39c12" : "#e74c3c" }}
+              />
+            ),
+          )}
         </div>
       </div>
 
-      {phase === "bet" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl p-5 space-y-4"
+      {/* The Wheel */}
+      <div
+        className="relative flex justify-center items-center"
+        style={{ height: 240 }}
+      >
+        {/* Outer chrome ring */}
+        <div
+          className="absolute"
           style={{
-            background: "oklch(0.11 0.015 280)",
-            border: `1px solid ${COLOR}40`,
+            width: 240,
+            height: 240,
+            borderRadius: "50%",
+            background:
+              "linear-gradient(135deg, #e8e8e8, #a0a0a0, #d0d0d0, #707070, #c0c0c0)",
+            boxShadow:
+              "0 0 0 4px #888, 0 8px 32px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.5)",
+          }}
+        />
+
+        {/* Spinning wheel */}
+        <motion.div
+          animate={{ rotate: spinDeg }}
+          transition={{ duration: 3.5, ease: [0.17, 0.67, 0.3, 0.99] }}
+          className="absolute"
+          style={{
+            width: 220,
+            height: 220,
+            borderRadius: "50%",
+            background: `conic-gradient(${conicGradient})`,
+            boxShadow: "inset 0 0 20px rgba(0,0,0,0.4)",
           }}
         >
-          <div className="flex flex-wrap gap-2">
+          {/* Segment labels */}
+          {SEGMENTS.map((mult, segIdx) => {
+            const angle =
+              (segIdx / SEGMENTS.length) * 360 + 180 / SEGMENTS.length;
+            const rad = (angle * Math.PI) / 180;
+            const r = 80;
+            const x = 110 + r * Math.sin(rad);
+            const y = 110 - r * Math.cos(rad);
+            return (
+              <div
+                key={`seg-${segIdx}-${SEG_COLORS[segIdx]}`}
+                className="absolute font-black text-white text-xs"
+                style={{
+                  left: x,
+                  top: y,
+                  transform: "translate(-50%,-50%)",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+                }}
+              >
+                {mult === 0 ? "✕" : `${mult}x`}
+              </div>
+            );
+          })}
+        </motion.div>
+
+        {/* Brass hub center */}
+        <div
+          className="absolute z-20 rounded-full"
+          style={{
+            width: 40,
+            height: 40,
+            background:
+              "linear-gradient(135deg, #d4af37 0%, #f5d76e 40%, #d4af37 70%, #8b6914 100%)",
+            border: "3px solid #b8860b",
+            boxShadow:
+              "0 0 12px rgba(212,175,55,0.6), inset 0 2px 4px rgba(255,255,255,0.5)",
+          }}
+        />
+
+        {/* Pointer triangle */}
+        <div
+          className="absolute z-30"
+          style={{ top: 2, left: "50%", transform: "translateX(-50%)" }}
+        >
+          <motion.div
+            animate={
+              landedIndex !== null
+                ? {
+                    filter: ["brightness(1)", "brightness(2)", "brightness(1)"],
+                  }
+                : {}
+            }
+            transition={{ repeat: 3, duration: 0.4 }}
+          >
+            <svg
+              width="24"
+              height="32"
+              viewBox="0 0 24 32"
+              aria-label="pointer"
+            >
+              <title>Pointer</title>
+              <polygon
+                points="12,0 24,28 0,28"
+                fill="#e74c3c"
+                stroke="#c0392b"
+                strokeWidth="2"
+              />
+              <polygon points="12,4 20,24 4,24" fill="#ff6b6b" />
+            </svg>
+          </motion.div>
+        </div>
+
+        {/* Spokes */}
+        {SEGMENTS.map((_seg, spokeIdx) => {
+          const angle = (spokeIdx / SEGMENTS.length) * 360;
+          return (
+            <div
+              key={`spoke-${angle}`}
+              className="absolute z-10"
+              style={{
+                width: 2,
+                height: 100,
+                top: 60,
+                left: "50%",
+                marginLeft: -1,
+                background: "rgba(255,255,255,0.25)",
+                transformOrigin: "center bottom",
+                transform: `rotate(${angle}deg)`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Bet controls */}
+      {phase !== "spinning" && (
+        <div
+          className="rounded-2xl p-4 space-y-3"
+          style={{
+            background: "rgba(10,10,20,0.95)",
+            border: `1px solid ${GOLD}40`,
+          }}
+        >
+          {phase === "result" && landedIndex !== null && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-xl p-4 text-center space-y-1"
+              style={{
+                background:
+                  netGain > 0 ? "rgba(0,100,40,0.6)" : "rgba(120,0,0,0.6)",
+                border: `2px solid ${netGain > 0 ? "rgba(0,255,100,0.4)" : "rgba(255,0,0,0.4)"}`,
+              }}
+            >
+              <p
+                className="text-xs font-bold"
+                style={{ color: "rgba(255,215,0,0.7)" }}
+              >
+                LANDED ON:{" "}
+                {SEGMENTS[landedIndex] === 0
+                  ? "LOSE"
+                  : `${SEGMENTS[landedIndex]}x`}
+              </p>
+              <p
+                className="font-black text-2xl"
+                style={{ color: netGain > 0 ? "#4ade80" : "#f87171" }}
+              >
+                {netGain > 0 ? `+${netGain}` : netGain} CREDITS
+              </p>
+              <p className="text-sm text-white/70">{resultMsg}</p>
+            </motion.div>
+          )}
+          <div className="flex flex-wrap gap-2 justify-center">
             {QUICK_BETS.map((q) => (
               <button
                 type="button"
                 key={q}
                 onClick={() => setBet(String(q))}
-                className="px-3 py-1 rounded-full text-xs font-black"
+                className="rounded-full px-4 py-2 text-sm font-black transition-all"
                 style={{
-                  background: betNum === q ? COLOR : "oklch(0.16 0.02 280)",
-                  color: betNum === q ? "black" : "oklch(0.65 0.05 280)",
-                  border: `1px solid ${betNum === q ? COLOR : "oklch(0.22 0.03 280)"}`,
+                  background: betNum === q ? GOLD : "rgba(255,215,0,0.1)",
+                  border: `2px solid ${betNum === q ? GOLD : "rgba(255,215,0,0.3)"}`,
+                  color: betNum === q ? "#1a0a00" : GOLD,
+                  boxShadow: betNum === q ? `0 0 12px ${GOLD}` : "none",
                 }}
               >
                 {q}
               </button>
             ))}
           </div>
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              min="1"
-              value={bet}
-              onChange={(e) => setBet(e.target.value)}
-              className="flex-1"
-            />
+          <Input
+            value={bet}
+            onChange={(e) => setBet(e.target.value)}
+            type="number"
+            min={1}
+            placeholder="Custom bet"
+            className="bg-black/30 border-yellow-400/30 text-white text-center"
+          />
+          {phase === "result" ? (
             <Button
-              onClick={handleSpin}
-              disabled={isPending || spinning}
-              className="font-black tracking-widest"
+              onClick={reset}
+              className="w-full font-black tracking-widest py-6"
               style={{
-                background: COLOR,
-                color: "black",
-                boxShadow: `0 0 12px ${COLOR}60`,
+                background: `linear-gradient(135deg, ${GOLD}, oklch(0.65 0.2 72))`,
+                color: "#1a0a00",
+                boxShadow: `0 0 24px ${GOLD}`,
               }}
             >
-              SPIN!
+              SPIN AGAIN
             </Button>
-          </div>
-        </motion.div>
+          ) : (
+            <Button
+              onClick={handleSpin}
+              disabled={isPending}
+              className="w-full font-black tracking-widest py-6"
+              style={{
+                background: `linear-gradient(135deg, ${GOLD}, oklch(0.65 0.2 72))`,
+                color: "#1a0a00",
+                boxShadow: `0 0 24px ${GOLD}`,
+              }}
+            >
+              SPIN THE WHEEL!
+            </Button>
+          )}
+        </div>
       )}
 
       {phase === "spinning" && (
         <div className="text-center py-4">
-          <p className="font-black tracking-widest" style={{ color: COLOR }}>
+          <motion.p
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ repeat: Number.POSITIVE_INFINITY, duration: 1 }}
+            className="font-black tracking-widest text-lg"
+            style={{ color: GOLD }}
+          >
             SPINNING...
-          </p>
+          </motion.p>
         </div>
-      )}
-
-      {phase === "result" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-3"
-        >
-          <div
-            className="rounded-xl p-4 text-center font-black text-lg"
-            style={{
-              background:
-                netGain > 0
-                  ? "oklch(0.78 0.18 72 / 0.15)"
-                  : "oklch(0.577 0.245 27 / 0.15)",
-              color:
-                netGain > 0 ? "oklch(0.78 0.18 72)" : "oklch(0.577 0.245 27)",
-              border: `1px solid ${netGain > 0 ? "oklch(0.78 0.18 72 / 0.5)" : "oklch(0.577 0.245 27 / 0.5)"}`,
-            }}
-          >
-            {resultMsg}
-          </div>
-          <Button
-            onClick={reset}
-            className="w-full font-black tracking-widest"
-            style={{
-              background: COLOR,
-              color: "black",
-              boxShadow: `0 0 12px ${COLOR}60`,
-            }}
-          >
-            SPIN AGAIN
-          </Button>
-        </motion.div>
       )}
     </div>
   );
