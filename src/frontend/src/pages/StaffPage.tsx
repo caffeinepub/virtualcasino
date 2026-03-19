@@ -47,8 +47,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { GameSettings, Product } from "../backend.d";
 import { GameType, UserRole } from "../backend.d";
+import { useAddCreditsByUsername } from "../hooks/useFriends";
 import {
-  useAddCredits,
   useAddProduct,
   useAssignRole,
   useGetAllGameSettings,
@@ -104,23 +104,23 @@ const purpleBorder = "1px solid oklch(0.55 0.25 290 / 0.4)";
 
 // ─── Overview Tab ────────────────────────────────────────────────────────────
 function OverviewTab() {
-  const { mutateAsync: addCredits, isPending: addingCredits } = useAddCredits();
   const { mutateAsync: assignRole, isPending: assigningRole } = useAssignRole();
+  const { mutateAsync: addCreditsByUsername, isPending: addingByUsername } =
+    useAddCreditsByUsername();
 
-  const [creditPrincipal, setCreditPrincipal] = useState("");
-  const [creditAmount, setCreditAmount] = useState("");
+  const [usernameCredit, setUsernameCredit] = useState("");
+  const [usernameAmount, setUsernameAmount] = useState("");
   const [rolePrincipal, setRolePrincipal] = useState("");
   const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.user);
 
-  const handleAddCredits = async (e: React.FormEvent) => {
+  const handleAddCreditsByUsername = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const user = Principal.fromText(creditPrincipal.trim());
-      const amount = BigInt(Number.parseInt(creditAmount, 10));
-      await addCredits({ user, amount });
-      toast.success(`Added ${creditAmount} credits to user`);
-      setCreditPrincipal("");
-      setCreditAmount("");
+      const amount = BigInt(Number.parseInt(usernameAmount, 10));
+      await addCreditsByUsername({ username: usernameCredit.trim(), amount });
+      toast.success(`Added ${usernameAmount} credits to @${usernameCredit}`);
+      setUsernameCredit("");
+      setUsernameAmount("");
     } catch (err: any) {
       toast.error(err?.message ?? "Failed to add credits");
     }
@@ -148,21 +148,24 @@ function OverviewTab() {
             ADD CREDITS
           </h2>
         </div>
-        <form onSubmit={handleAddCredits} className="space-y-4">
+        <form onSubmit={handleAddCreditsByUsername} className="space-y-4">
           <div>
             <Label
-              htmlFor="credit-principal"
+              htmlFor="credit-username"
               className="text-sm text-muted-foreground"
             >
-              User Principal ID
+              Player Username
             </Label>
             <Input
-              id="credit-principal"
-              value={creditPrincipal}
-              onChange={(e) => setCreditPrincipal(e.target.value)}
-              placeholder="e.g. aaaaa-aa"
-              className="mt-1 bg-secondary border-border text-foreground font-mono text-xs"
-              data-ocid="staff.credit.principal.input"
+              id="credit-username"
+              value={usernameCredit}
+              onChange={(e) =>
+                setUsernameCredit(e.target.value.replace(/\s/g, ""))
+              }
+              placeholder="e.g. ace22"
+              maxLength={7}
+              className="mt-1 bg-secondary border-border text-foreground"
+              data-ocid="staff.credit.input"
             />
           </div>
           <div>
@@ -176,8 +179,8 @@ function OverviewTab() {
               id="credit-amount"
               type="number"
               min="1"
-              value={creditAmount}
-              onChange={(e) => setCreditAmount(e.target.value)}
+              value={usernameAmount}
+              onChange={(e) => setUsernameAmount(e.target.value)}
               placeholder="e.g. 100"
               className="mt-1 bg-secondary border-border text-foreground"
               data-ocid="staff.credit.amount.input"
@@ -192,10 +195,10 @@ function OverviewTab() {
               boxShadow: "0 0 12px oklch(0.78 0.18 72 / 0.3)",
               color: "#fff",
             }}
-            disabled={addingCredits || !creditPrincipal || !creditAmount}
+            disabled={addingByUsername || !usernameCredit || !usernameAmount}
             data-ocid="staff.credit.submit_button"
           >
-            {addingCredits ? (
+            {addingByUsername ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : null}
             Add Credits

@@ -89,9 +89,14 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface DailyWinner {
-    user: Principal;
-    amount: bigint;
+export interface GameChallenge {
+    id: string;
+    to: Principal;
+    bet: bigint;
+    status: string;
+    from: Principal;
+    timestamp: Time;
+    gameType: GameType;
 }
 export interface GameSettings {
     minBet: bigint;
@@ -99,6 +104,14 @@ export interface GameSettings {
     maxBet: bigint;
 }
 export type Time = bigint;
+export interface FriendInfo {
+    principal: Principal;
+    username: string;
+}
+export interface DailyWinner {
+    user: Principal;
+    amount: bigint;
+}
 export interface UserGame {
     bet: bigint;
     result: GameResult;
@@ -119,6 +132,7 @@ export interface RedemptionRequest {
 }
 export interface UserSummary {
     principal: Principal;
+    username: string;
     balance: bigint;
     joinDate: Time;
     name: string;
@@ -136,6 +150,7 @@ export interface Product {
     category: string;
 }
 export interface UserProfile {
+    username: string;
     name: string;
 }
 export enum GameResult {
@@ -147,8 +162,10 @@ export enum GameType {
     mines = "mines",
     penaltyShootout = "penaltyShootout",
     blackjack = "blackjack",
+    spaceShooter = "spaceShooter",
     ballDrop = "ballDrop",
     plinko = "plinko",
+    whackAMole = "whackAMole",
     dice = "dice",
     threeCardPoker = "threeCardPoker",
     hiLo = "hiLo",
@@ -160,6 +177,7 @@ export enum GameType {
     sicBo = "sicBo",
     baccarat = "baccarat",
     slots = "slots",
+    snake = "snake",
     caribbeanStud = "caribbeanStud",
     paiGowPoker = "paiGowPoker",
     letItRide = "letItRide",
@@ -167,7 +185,9 @@ export enum GameType {
     roulette = "roulette",
     casinoHoldem = "casinoHoldem",
     coinPusher = "coinPusher",
-    crashGame = "crashGame"
+    crashGame = "crashGame",
+    breakout = "breakout",
+    pacmanStyle = "pacmanStyle"
 }
 export enum UserRole {
     admin = "admin",
@@ -177,9 +197,11 @@ export enum UserRole {
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addCredits(user: Principal, amount: bigint): Promise<void>;
+    addCreditsByUsername(username: string, amount: bigint): Promise<void>;
     addProduct(name: string, description: string, category: string, pointPrice: bigint): Promise<Product>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     canClaimDailyCredits(): Promise<boolean>;
+    cancelGameChallenge(challengeId: string): Promise<GameChallenge>;
     claimDailyCredits(): Promise<void>;
     getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
     getAllProducts(): Promise<Array<Product>>;
@@ -189,23 +211,40 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyWinners(): Promise<Array<DailyWinner>>;
+    getFriendRequests(): Promise<Array<{
+        from: Principal;
+        timestamp: Time;
+        fromUsername: string;
+    }>>;
+    getFriends(): Promise<Array<FriendInfo>>;
     getGameHistory(user: Principal): Promise<Array<UserGame>>;
     getGameSettings(gameType: GameType): Promise<GameSettings | null>;
     getMyRedemptions(): Promise<Array<RedemptionRequest>>;
+    getPendingChallenges(): Promise<Array<GameChallenge>>;
     getPointsBalance(): Promise<bigint>;
+    getSentChallenges(): Promise<Array<GameChallenge>>;
+    getUserByUsername(username: string): Promise<Principal | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getUsernameByPrincipal(user: Principal): Promise<string | null>;
     getWalletBalance(): Promise<bigint>;
     initializeBalance(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     playGame(gameType: GameType, bet: bigint): Promise<UserGame>;
+    recordGameOutcome(gameType: GameType, bet: bigint, won: boolean, winAmount: bigint): Promise<UserGame>;
     redeemProduct(productId: string): Promise<RedemptionRequest>;
+    removeFriend(friendPrincipal: Principal): Promise<void>;
     removeProduct(id: string): Promise<void>;
+    respondFriendRequest(fromPrincipal: Principal, accept: boolean): Promise<void>;
+    respondGameChallenge(challengeId: string, accept: boolean): Promise<GameChallenge>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    sendFriendRequest(toUsername: string): Promise<void>;
+    sendGameChallenge(toUsername: string, gameType: GameType, bet: bigint): Promise<GameChallenge>;
     setGameSettings(gameType: GameType, settings: GameSettings): Promise<void>;
+    setUsername(username: string): Promise<void>;
     updateProduct(id: string, name: string, description: string, category: string, pointPrice: bigint, available: boolean): Promise<Product>;
     updateRedemptionStatus(id: string, status: string): Promise<void>;
 }
-import type { GameResult as _GameResult, GameSettings as _GameSettings, GameType as _GameType, Time as _Time, UserGame as _UserGame, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { GameChallenge as _GameChallenge, GameResult as _GameResult, GameSettings as _GameSettings, GameType as _GameType, Time as _Time, UserGame as _UserGame, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -233,6 +272,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addCredits(arg0, arg1);
+            return result;
+        }
+    }
+    async addCreditsByUsername(arg0: string, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addCreditsByUsername(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addCreditsByUsername(arg0, arg1);
             return result;
         }
     }
@@ -276,6 +329,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.canClaimDailyCredits();
             return result;
+        }
+    }
+    async cancelGameChallenge(arg0: string): Promise<GameChallenge> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.cancelGameChallenge(arg0);
+                return from_candid_GameChallenge_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.cancelGameChallenge(arg0);
+            return from_candid_GameChallenge_n3(this._uploadFile, this._downloadFile, result);
         }
     }
     async claimDailyCredits(): Promise<void> {
@@ -366,28 +433,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserRole(): Promise<UserRole> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole_n4(this._uploadFile, this._downloadFile, result);
+                return from_candid_UserRole_n8(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole_n4(this._uploadFile, this._downloadFile, result);
+            return from_candid_UserRole_n8(this._uploadFile, this._downloadFile, result);
         }
     }
     async getDailyWinners(): Promise<Array<DailyWinner>> {
@@ -404,32 +471,64 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getFriendRequests(): Promise<Array<{
+        from: Principal;
+        timestamp: Time;
+        fromUsername: string;
+    }>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFriendRequests();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFriendRequests();
+            return result;
+        }
+    }
+    async getFriends(): Promise<Array<FriendInfo>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFriends();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getFriends();
+            return result;
+        }
+    }
     async getGameHistory(arg0: Principal): Promise<Array<UserGame>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getGameHistory(arg0);
-                return from_candid_vec_n6(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n10(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getGameHistory(arg0);
-            return from_candid_vec_n6(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n10(this._uploadFile, this._downloadFile, result);
         }
     }
     async getGameSettings(arg0: GameType): Promise<GameSettings | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0));
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getGameSettings(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0));
+                return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0));
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getGameSettings(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0));
+            return from_candid_opt_n17(this._uploadFile, this._downloadFile, result);
         }
     }
     async getMyRedemptions(): Promise<Array<RedemptionRequest>> {
@@ -446,6 +545,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getPendingChallenges(): Promise<Array<GameChallenge>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPendingChallenges();
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPendingChallenges();
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getPointsBalance(): Promise<bigint> {
         if (this.processError) {
             try {
@@ -460,18 +573,60 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async getSentChallenges(): Promise<Array<GameChallenge>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSentChallenges();
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSentChallenges();
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getUserByUsername(arg0: string): Promise<Principal | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUserByUsername(arg0);
+                return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUserByUsername(arg0);
+            return from_candid_opt_n19(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getUsernameByPrincipal(arg0: Principal): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUsernameByPrincipal(arg0);
+                return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUsernameByPrincipal(arg0);
+            return from_candid_opt_n20(this._uploadFile, this._downloadFile, result);
         }
     }
     async getWalletBalance(): Promise<bigint> {
@@ -519,15 +674,29 @@ export class Backend implements backendInterface {
     async playGame(arg0: GameType, arg1: bigint): Promise<UserGame> {
         if (this.processError) {
             try {
-                const result = await this.actor.playGame(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0), arg1);
-                return from_candid_UserGame_n7(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.playGame(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0), arg1);
+                return from_candid_UserGame_n11(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.playGame(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0), arg1);
-            return from_candid_UserGame_n7(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.playGame(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0), arg1);
+            return from_candid_UserGame_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async recordGameOutcome(arg0: GameType, arg1: bigint, arg2: boolean, arg3: bigint): Promise<UserGame> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.recordGameOutcome(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0), arg1, arg2, arg3);
+                return from_candid_UserGame_n11(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.recordGameOutcome(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0), arg1, arg2, arg3);
+            return from_candid_UserGame_n11(this._uploadFile, this._downloadFile, result);
         }
     }
     async redeemProduct(arg0: string): Promise<RedemptionRequest> {
@@ -541,6 +710,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.redeemProduct(arg0);
+            return result;
+        }
+    }
+    async removeFriend(arg0: Principal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.removeFriend(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.removeFriend(arg0);
             return result;
         }
     }
@@ -558,6 +741,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async respondFriendRequest(arg0: Principal, arg1: boolean): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.respondFriendRequest(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.respondFriendRequest(arg0, arg1);
+            return result;
+        }
+    }
+    async respondGameChallenge(arg0: string, arg1: boolean): Promise<GameChallenge> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.respondGameChallenge(arg0, arg1);
+                return from_candid_GameChallenge_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.respondGameChallenge(arg0, arg1);
+            return from_candid_GameChallenge_n3(this._uploadFile, this._downloadFile, result);
+        }
+    }
     async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
         if (this.processError) {
             try {
@@ -572,17 +783,59 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async setGameSettings(arg0: GameType, arg1: GameSettings): Promise<void> {
+    async sendFriendRequest(arg0: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0), arg1);
+                const result = await this.actor.sendFriendRequest(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setGameSettings(to_candid_GameType_n13(this._uploadFile, this._downloadFile, arg0), arg1);
+            const result = await this.actor.sendFriendRequest(arg0);
+            return result;
+        }
+    }
+    async sendGameChallenge(arg0: string, arg1: GameType, arg2: bigint): Promise<GameChallenge> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.sendGameChallenge(arg0, to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg1), arg2);
+                return from_candid_GameChallenge_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.sendGameChallenge(arg0, to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg1), arg2);
+            return from_candid_GameChallenge_n3(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async setGameSettings(arg0: GameType, arg1: GameSettings): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setGameSettings(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0), arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setGameSettings(to_candid_GameType_n15(this._uploadFile, this._downloadFile, arg0), arg1);
+            return result;
+        }
+    }
+    async setUsername(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setUsername(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setUsername(arg0);
             return result;
         }
     }
@@ -615,25 +868,34 @@ export class Backend implements backendInterface {
         }
     }
 }
-function from_candid_GameResult_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GameResult): GameResult {
-    return from_candid_variant_n10(_uploadFile, _downloadFile, value);
+function from_candid_GameChallenge_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GameChallenge): GameChallenge {
+    return from_candid_record_n4(_uploadFile, _downloadFile, value);
 }
-function from_candid_GameType_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GameType): GameType {
-    return from_candid_variant_n12(_uploadFile, _downloadFile, value);
+function from_candid_GameResult_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GameResult): GameResult {
+    return from_candid_variant_n14(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserGame_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserGame): UserGame {
-    return from_candid_record_n8(_uploadFile, _downloadFile, value);
+function from_candid_GameType_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _GameType): GameType {
+    return from_candid_variant_n6(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserRole_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n5(_uploadFile, _downloadFile, value);
+function from_candid_UserGame_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserGame): UserGame {
+    return from_candid_record_n12(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_GameSettings]): GameSettings | null {
+function from_candid_UserRole_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n9(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_GameSettings]): GameSettings | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+function from_candid_opt_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [Principal]): Principal | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_opt_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_record_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     bet: bigint;
     result: _GameResult;
     user: Principal;
@@ -650,21 +912,48 @@ function from_candid_record_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint
 } {
     return {
         bet: value.bet,
-        result: from_candid_GameResult_n9(_uploadFile, _downloadFile, value.result),
+        result: from_candid_GameResult_n13(_uploadFile, _downloadFile, value.result),
         user: value.user,
         timestamp: value.timestamp,
-        gameType: from_candid_GameType_n11(_uploadFile, _downloadFile, value.gameType),
+        gameType: from_candid_GameType_n5(_uploadFile, _downloadFile, value.gameType),
         balanceChange: value.balanceChange
     };
 }
-function from_candid_variant_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    to: Principal;
+    bet: bigint;
+    status: string;
+    from: Principal;
+    timestamp: _Time;
+    gameType: _GameType;
+}): {
+    id: string;
+    to: Principal;
+    bet: bigint;
+    status: string;
+    from: Principal;
+    timestamp: Time;
+    gameType: GameType;
+} {
+    return {
+        id: value.id,
+        to: value.to,
+        bet: value.bet,
+        status: value.status,
+        from: value.from,
+        timestamp: value.timestamp,
+        gameType: from_candid_GameType_n5(_uploadFile, _downloadFile, value.gameType)
+    };
+}
+function from_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     win: null;
 } | {
     lose: null;
 }): GameResult {
     return "win" in value ? GameResult.win : "lose" in value ? GameResult.lose : value;
 }
-function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     war: null;
 } | {
     mines: null;
@@ -673,9 +962,13 @@ function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Ui
 } | {
     blackjack: null;
 } | {
+    spaceShooter: null;
+} | {
     ballDrop: null;
 } | {
     plinko: null;
+} | {
+    whackAMole: null;
 } | {
     dice: null;
 } | {
@@ -699,6 +992,8 @@ function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Ui
 } | {
     slots: null;
 } | {
+    snake: null;
+} | {
     caribbeanStud: null;
 } | {
     paiGowPoker: null;
@@ -714,10 +1009,14 @@ function from_candid_variant_n12(_uploadFile: (file: ExternalBlob) => Promise<Ui
     coinPusher: null;
 } | {
     crashGame: null;
+} | {
+    breakout: null;
+} | {
+    pacmanStyle: null;
 }): GameType {
-    return "war" in value ? GameType.war : "mines" in value ? GameType.mines : "penaltyShootout" in value ? GameType.penaltyShootout : "blackjack" in value ? GameType.blackjack : "ballDrop" in value ? GameType.ballDrop : "plinko" in value ? GameType.plinko : "dice" in value ? GameType.dice : "threeCardPoker" in value ? GameType.threeCardPoker : "hiLo" in value ? GameType.hiLo : "keno" in value ? GameType.keno : "craps" in value ? GameType.craps : "wheelOfFortune" in value ? GameType.wheelOfFortune : "scratchCards" in value ? GameType.scratchCards : "limbo" in value ? GameType.limbo : "sicBo" in value ? GameType.sicBo : "baccarat" in value ? GameType.baccarat : "slots" in value ? GameType.slots : "caribbeanStud" in value ? GameType.caribbeanStud : "paiGowPoker" in value ? GameType.paiGowPoker : "letItRide" in value ? GameType.letItRide : "videoPoker" in value ? GameType.videoPoker : "roulette" in value ? GameType.roulette : "casinoHoldem" in value ? GameType.casinoHoldem : "coinPusher" in value ? GameType.coinPusher : "crashGame" in value ? GameType.crashGame : value;
+    return "war" in value ? GameType.war : "mines" in value ? GameType.mines : "penaltyShootout" in value ? GameType.penaltyShootout : "blackjack" in value ? GameType.blackjack : "spaceShooter" in value ? GameType.spaceShooter : "ballDrop" in value ? GameType.ballDrop : "plinko" in value ? GameType.plinko : "whackAMole" in value ? GameType.whackAMole : "dice" in value ? GameType.dice : "threeCardPoker" in value ? GameType.threeCardPoker : "hiLo" in value ? GameType.hiLo : "keno" in value ? GameType.keno : "craps" in value ? GameType.craps : "wheelOfFortune" in value ? GameType.wheelOfFortune : "scratchCards" in value ? GameType.scratchCards : "limbo" in value ? GameType.limbo : "sicBo" in value ? GameType.sicBo : "baccarat" in value ? GameType.baccarat : "slots" in value ? GameType.slots : "snake" in value ? GameType.snake : "caribbeanStud" in value ? GameType.caribbeanStud : "paiGowPoker" in value ? GameType.paiGowPoker : "letItRide" in value ? GameType.letItRide : "videoPoker" in value ? GameType.videoPoker : "roulette" in value ? GameType.roulette : "casinoHoldem" in value ? GameType.casinoHoldem : "coinPusher" in value ? GameType.coinPusher : "crashGame" in value ? GameType.crashGame : "breakout" in value ? GameType.breakout : "pacmanStyle" in value ? GameType.pacmanStyle : value;
 }
-function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -726,16 +1025,19 @@ function from_candid_variant_n5(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
-function from_candid_vec_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserGame>): Array<UserGame> {
-    return value.map((x)=>from_candid_UserGame_n7(_uploadFile, _downloadFile, x));
+function from_candid_vec_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserGame>): Array<UserGame> {
+    return value.map((x)=>from_candid_UserGame_n11(_uploadFile, _downloadFile, x));
 }
-function to_candid_GameType_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GameType): _GameType {
-    return to_candid_variant_n14(_uploadFile, _downloadFile, value);
+function from_candid_vec_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_GameChallenge>): Array<GameChallenge> {
+    return value.map((x)=>from_candid_GameChallenge_n3(_uploadFile, _downloadFile, x));
+}
+function to_candid_GameType_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GameType): _GameType {
+    return to_candid_variant_n16(_uploadFile, _downloadFile, value);
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);
 }
-function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GameType): {
+function to_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: GameType): {
     war: null;
 } | {
     mines: null;
@@ -744,9 +1046,13 @@ function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint
 } | {
     blackjack: null;
 } | {
+    spaceShooter: null;
+} | {
     ballDrop: null;
 } | {
     plinko: null;
+} | {
+    whackAMole: null;
 } | {
     dice: null;
 } | {
@@ -770,6 +1076,8 @@ function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint
 } | {
     slots: null;
 } | {
+    snake: null;
+} | {
     caribbeanStud: null;
 } | {
     paiGowPoker: null;
@@ -785,6 +1093,10 @@ function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint
     coinPusher: null;
 } | {
     crashGame: null;
+} | {
+    breakout: null;
+} | {
+    pacmanStyle: null;
 } {
     return value == GameType.war ? {
         war: null
@@ -794,10 +1106,14 @@ function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint
         penaltyShootout: null
     } : value == GameType.blackjack ? {
         blackjack: null
+    } : value == GameType.spaceShooter ? {
+        spaceShooter: null
     } : value == GameType.ballDrop ? {
         ballDrop: null
     } : value == GameType.plinko ? {
         plinko: null
+    } : value == GameType.whackAMole ? {
+        whackAMole: null
     } : value == GameType.dice ? {
         dice: null
     } : value == GameType.threeCardPoker ? {
@@ -820,6 +1136,8 @@ function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint
         baccarat: null
     } : value == GameType.slots ? {
         slots: null
+    } : value == GameType.snake ? {
+        snake: null
     } : value == GameType.caribbeanStud ? {
         caribbeanStud: null
     } : value == GameType.paiGowPoker ? {
@@ -836,6 +1154,10 @@ function to_candid_variant_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint
         coinPusher: null
     } : value == GameType.crashGame ? {
         crashGame: null
+    } : value == GameType.breakout ? {
+        breakout: null
+    } : value == GameType.pacmanStyle ? {
+        pacmanStyle: null
     } : value;
 }
 function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {

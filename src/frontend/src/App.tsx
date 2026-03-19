@@ -14,7 +14,9 @@ import HistoryPage from "./pages/HistoryPage";
 import HomePage from "./pages/HomePage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import LobbyPage from "./pages/LobbyPage";
+import MultiplayerPage from "./pages/MultiplayerPage";
 import PointsShopPage from "./pages/PointsShopPage";
+import ProfilePage from "./pages/ProfilePage";
 import StaffPage from "./pages/StaffPage";
 
 const rootRoute = createRootRoute({
@@ -83,6 +85,18 @@ const shopRoute = createRoute({
   component: PointsShopPage,
 });
 
+const multiplayerRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/multiplayer",
+  component: MultiplayerPage,
+});
+
+const profileRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/profile",
+  component: ProfilePage,
+});
+
 const routeTree = rootRoute.addChildren([
   authRoute,
   publicLayoutRoute.addChildren([indexRoute]),
@@ -93,6 +107,8 @@ const routeTree = rootRoute.addChildren([
     leaderboardRoute,
     staffRoute,
     shopRoute,
+    multiplayerRoute,
+    profileRoute,
   ]),
 ]);
 

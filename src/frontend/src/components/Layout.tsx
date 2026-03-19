@@ -12,12 +12,17 @@ import {
   ShieldCheck,
   ShoppingBag,
   Star,
+  Swords,
   Trophy,
+  User,
   Zap,
 } from "lucide-react";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { useGetPendingChallengeCount } from "../hooks/useChallenges";
+import { useGetFriendRequests } from "../hooks/useFriends";
 import { useInternetIdentity } from "../hooks/useInternetIdentity";
+import { useGetPendingTurnCount } from "../hooks/useMultiplayer";
 import {
   useClaimDailyCredits,
   useGetCallerUserRole,
@@ -37,8 +42,14 @@ export default function Layout() {
   const { data: role } = useGetCallerUserRole();
   const { mutateAsync: claimDaily, isPending: claiming } =
     useClaimDailyCredits();
+  const { data: pendingTurns } = useGetPendingTurnCount();
+  const { data: friendRequests = [] } = useGetFriendRequests();
 
   const _isStaff = role === "admin";
+  const pendingCount = pendingTurns ? Number(pendingTurns) : 0;
+  const friendRequestCount = friendRequests.length;
+  const { data: pendingChallengeCount = 0 } = useGetPendingChallengeCount();
+  const totalMultiplayerBadge = pendingCount + pendingChallengeCount;
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
@@ -200,6 +211,77 @@ export default function Layout() {
               </Link>
             );
           })}
+
+          {/* Multiplayer link — desktop */}
+          <Link
+            to="/multiplayer"
+            className="relative px-4 py-2 rounded-md text-sm font-black tracking-wide transition-all flex items-center gap-1.5"
+            style={{
+              color:
+                currentPath === "/multiplayer"
+                  ? "oklch(0.55 0.25 290)"
+                  : "oklch(0.55 0.25 290 / 0.7)",
+              background:
+                currentPath === "/multiplayer"
+                  ? "oklch(0.55 0.25 290 / 0.12)"
+                  : undefined,
+              textShadow:
+                currentPath === "/multiplayer"
+                  ? "0 0 10px oklch(0.55 0.25 290 / 0.8)"
+                  : undefined,
+            }}
+            data-ocid="nav.multiplayer.link"
+          >
+            <Swords className="w-3.5 h-3.5" />
+            Multiplayer
+            {totalMultiplayerBadge > 0 && (
+              <span
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black text-white"
+                style={{
+                  background: "oklch(0.65 0.28 340)",
+                  boxShadow: "0 0 6px oklch(0.65 0.28 340 / 0.7)",
+                }}
+              >
+                {totalMultiplayerBadge}
+              </span>
+            )}
+          </Link>
+
+          {/* Profile link — desktop */}
+          <Link
+            to="/profile"
+            className="relative px-3 py-2 rounded-md text-sm font-black tracking-wide transition-all flex items-center gap-1.5"
+            style={{
+              color:
+                currentPath === "/profile"
+                  ? "oklch(0.70 0.20 190)"
+                  : "oklch(0.70 0.20 190 / 0.65)",
+              background:
+                currentPath === "/profile"
+                  ? "oklch(0.70 0.20 190 / 0.12)"
+                  : undefined,
+              textShadow:
+                currentPath === "/profile"
+                  ? "0 0 10px oklch(0.70 0.20 190 / 0.8)"
+                  : undefined,
+            }}
+            data-ocid="nav.profile.link"
+          >
+            <User className="w-3.5 h-3.5" />
+            Profile
+            {friendRequestCount > 0 && (
+              <span
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black text-white"
+                style={{
+                  background: "oklch(0.65 0.28 340)",
+                  boxShadow: "0 0 6px oklch(0.65 0.28 340 / 0.7)",
+                }}
+              >
+                {friendRequestCount}
+              </span>
+            )}
+          </Link>
+
           <Link to="/staff" data-ocid="nav.staff.link">
             <Button
               size="sm"
@@ -360,6 +442,73 @@ export default function Layout() {
             </Link>
           );
         })}
+
+        {/* Multiplayer — mobile */}
+        <Link
+          to="/multiplayer"
+          className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all relative"
+          style={{
+            color:
+              currentPath === "/multiplayer"
+                ? "oklch(0.55 0.25 290)"
+                : "oklch(0.55 0.25 290 / 0.6)",
+            textShadow:
+              currentPath === "/multiplayer"
+                ? "0 0 8px oklch(0.55 0.25 290 / 0.8)"
+                : "none",
+          }}
+          data-ocid="nav.mobile.multiplayer.link"
+        >
+          <div className="relative">
+            <Swords className="w-5 h-5" />
+            {totalMultiplayerBadge > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                style={{
+                  background: "oklch(0.65 0.28 340)",
+                  boxShadow: "0 0 4px oklch(0.65 0.28 340 / 0.7)",
+                }}
+              >
+                {totalMultiplayerBadge}
+              </span>
+            )}
+          </div>
+          <span className="text-xs font-black tracking-wide">MULTI</span>
+        </Link>
+
+        {/* Profile — mobile */}
+        <Link
+          to="/profile"
+          className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-all"
+          style={{
+            color:
+              currentPath === "/profile"
+                ? "oklch(0.70 0.20 190)"
+                : "oklch(0.70 0.20 190 / 0.6)",
+            textShadow:
+              currentPath === "/profile"
+                ? "0 0 8px oklch(0.70 0.20 190 / 0.8)"
+                : "none",
+          }}
+          data-ocid="nav.mobile.profile.link"
+        >
+          <div className="relative">
+            <User className="w-5 h-5" />
+            {friendRequestCount > 0 && (
+              <span
+                className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                style={{
+                  background: "oklch(0.65 0.28 340)",
+                  boxShadow: "0 0 4px oklch(0.65 0.28 340 / 0.7)",
+                }}
+              >
+                {friendRequestCount}
+              </span>
+            )}
+          </div>
+          <span className="text-xs font-black tracking-wide">PROFILE</span>
+        </Link>
+
         {/* Staff link in mobile bottom nav */}
         <Link
           to="/staff"
@@ -435,11 +584,13 @@ export default function Layout() {
                 className="text-sm font-black tracking-widest mb-3"
                 style={{ color: "oklch(0.55 0.25 290)" }}
               >
-                ⚡ CPM VEGAS
+                ⚔️ MULTIPLAYER
               </h4>
-              <p className="text-xs text-muted-foreground">
-                Virtual casino & arcade gaming. Play responsibly.
-              </p>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                <li>Ranked</li>
+                <li>Unranked</li>
+                <li>Challenge</li>
+              </ul>
             </div>
           </div>
           <div

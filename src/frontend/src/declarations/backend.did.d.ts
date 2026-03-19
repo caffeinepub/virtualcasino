@@ -11,6 +11,16 @@ import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
 export interface DailyWinner { 'user' : Principal, 'amount' : bigint }
+export interface FriendInfo { 'principal' : Principal, 'username' : string }
+export interface GameChallenge {
+  'id' : string,
+  'to' : Principal,
+  'bet' : bigint,
+  'status' : string,
+  'from' : Principal,
+  'timestamp' : Time,
+  'gameType' : GameType,
+}
 export type GameResult = { 'win' : null } |
   { 'lose' : null };
 export interface GameSettings {
@@ -22,8 +32,10 @@ export type GameType = { 'war' : null } |
   { 'mines' : null } |
   { 'penaltyShootout' : null } |
   { 'blackjack' : null } |
+  { 'spaceShooter' : null } |
   { 'ballDrop' : null } |
   { 'plinko' : null } |
+  { 'whackAMole' : null } |
   { 'dice' : null } |
   { 'threeCardPoker' : null } |
   { 'hiLo' : null } |
@@ -35,6 +47,7 @@ export type GameType = { 'war' : null } |
   { 'sicBo' : null } |
   { 'baccarat' : null } |
   { 'slots' : null } |
+  { 'snake' : null } |
   { 'caribbeanStud' : null } |
   { 'paiGowPoker' : null } |
   { 'letItRide' : null } |
@@ -42,7 +55,9 @@ export type GameType = { 'war' : null } |
   { 'roulette' : null } |
   { 'casinoHoldem' : null } |
   { 'coinPusher' : null } |
-  { 'crashGame' : null };
+  { 'crashGame' : null } |
+  { 'breakout' : null } |
+  { 'pacmanStyle' : null };
 export interface Product {
   'id' : string,
   'name' : string,
@@ -70,12 +85,13 @@ export interface UserGame {
   'gameType' : GameType,
   'balanceChange' : bigint,
 }
-export interface UserProfile { 'name' : string }
+export interface UserProfile { 'username' : string, 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
 export interface UserSummary {
   'principal' : Principal,
+  'username' : string,
   'balance' : bigint,
   'joinDate' : Time,
   'name' : string,
@@ -87,9 +103,11 @@ export interface UserSummary {
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addCredits' : ActorMethod<[Principal, bigint], undefined>,
+  'addCreditsByUsername' : ActorMethod<[string, bigint], undefined>,
   'addProduct' : ActorMethod<[string, string, string, bigint], Product>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'canClaimDailyCredits' : ActorMethod<[], boolean>,
+  'cancelGameChallenge' : ActorMethod<[string], GameChallenge>,
   'claimDailyCredits' : ActorMethod<[], undefined>,
   'getAllGameSettings' : ActorMethod<[], Array<[string, GameSettings]>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
@@ -99,19 +117,38 @@ export interface _SERVICE {
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getDailyWinners' : ActorMethod<[], Array<DailyWinner>>,
+  'getFriendRequests' : ActorMethod<
+    [],
+    Array<{ 'from' : Principal, 'timestamp' : Time, 'fromUsername' : string }>
+  >,
+  'getFriends' : ActorMethod<[], Array<FriendInfo>>,
   'getGameHistory' : ActorMethod<[Principal], Array<UserGame>>,
   'getGameSettings' : ActorMethod<[GameType], [] | [GameSettings]>,
   'getMyRedemptions' : ActorMethod<[], Array<RedemptionRequest>>,
+  'getPendingChallenges' : ActorMethod<[], Array<GameChallenge>>,
   'getPointsBalance' : ActorMethod<[], bigint>,
+  'getSentChallenges' : ActorMethod<[], Array<GameChallenge>>,
+  'getUserByUsername' : ActorMethod<[string], [] | [Principal]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getUsernameByPrincipal' : ActorMethod<[Principal], [] | [string]>,
   'getWalletBalance' : ActorMethod<[], bigint>,
   'initializeBalance' : ActorMethod<[], undefined>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'playGame' : ActorMethod<[GameType, bigint], UserGame>,
+  'recordGameOutcome' : ActorMethod<
+    [GameType, bigint, boolean, bigint],
+    UserGame
+  >,
   'redeemProduct' : ActorMethod<[string], RedemptionRequest>,
+  'removeFriend' : ActorMethod<[Principal], undefined>,
   'removeProduct' : ActorMethod<[string], undefined>,
+  'respondFriendRequest' : ActorMethod<[Principal, boolean], undefined>,
+  'respondGameChallenge' : ActorMethod<[string, boolean], GameChallenge>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'sendFriendRequest' : ActorMethod<[string], undefined>,
+  'sendGameChallenge' : ActorMethod<[string, GameType, bigint], GameChallenge>,
   'setGameSettings' : ActorMethod<[GameType, GameSettings], undefined>,
+  'setUsername' : ActorMethod<[string], undefined>,
   'updateProduct' : ActorMethod<
     [string, string, string, string, bigint, boolean],
     Product

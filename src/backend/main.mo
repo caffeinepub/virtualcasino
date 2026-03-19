@@ -5,18 +5,53 @@ import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Float "mo:core/Float";
 import Text "mo:core/Text";
+import Char "mo:core/Char";
 import Time "mo:core/Time";
 import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
-
+import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
 
+// Apply migration using with clause
+
 
 actor {
-  type GameType = { #slots; #blackjack; #roulette; #videoPoker; #dice; #baccarat; #keno; #scratchCards; #craps; #paiGowPoker; #sicBo; #war; #caribbeanStud; #letItRide; #threeCardPoker; #casinoHoldem; #wheelOfFortune; #coinPusher; #plinko; #crashGame; #mines; #limbo; #hiLo; #penaltyShootout; #ballDrop };
+  type GameType = {
+    #slots;
+    #blackjack;
+    #roulette;
+    #videoPoker;
+    #dice;
+    #baccarat;
+    #keno;
+    #scratchCards;
+    #craps;
+    #paiGowPoker;
+    #sicBo;
+    #war;
+    #caribbeanStud;
+    #letItRide;
+    #threeCardPoker;
+    #casinoHoldem;
+    #wheelOfFortune;
+    #coinPusher;
+    #plinko;
+    #crashGame;
+    #mines;
+    #limbo;
+    #hiLo;
+    #penaltyShootout;
+    #ballDrop;
+    #snake; // Arcade Games
+    #spaceShooter;
+    #breakout;
+    #pacmanStyle;
+    #whackAMole;
+  };
+
   type GameResult = { #win; #lose };
   type DailyWinner = {
     user : Principal;
@@ -25,6 +60,7 @@ actor {
 
   public type UserProfile = {
     name : Text;
+    username : Text;
   };
 
   public type GameSettings = {
@@ -42,6 +78,7 @@ actor {
     joinDate : Time.Time;
     totalGamesPlayed : Nat;
     totalCreditsWon : Int;
+    username : Text;
   };
 
   public type Product = {
@@ -60,6 +97,27 @@ actor {
     productId : Text;
     productName : Text;
     pointPrice : Nat;
+    timestamp : Time.Time;
+    status : Text;
+  };
+
+  public type FriendRequest = {
+    from : Principal;
+    to : Principal;
+    timestamp : Time.Time;
+  };
+
+  public type FriendInfo = {
+    principal : Principal;
+    username : Text;
+  };
+
+  public type GameChallenge = {
+    id : Text;
+    from : Principal;
+    to : Principal;
+    gameType : GameType;
+    bet : Nat;
     timestamp : Time.Time;
     status : Text;
   };
@@ -109,6 +167,15 @@ actor {
   let redemptionsMap = Map.empty<Text, RedemptionRequest>();
   var nextRedemptionId = 1;
 
+  let usernameToOwner = Map.empty<Text, Principal>();
+  let ownerToUsername = Map.empty<Principal, Text>();
+
+  let pendingRequestsMap = Map.empty<Principal, List.List<FriendRequest>>();
+  let friendsListMap = Map.empty<Principal, List.List<Principal>>();
+
+  let challengesMap = Map.empty<Text, GameChallenge>();
+  var nextChallengeId = 1;
+
   func gameTypeToText(g : GameType) : Text {
     switch (g) {
       case (#slots) { "slots" };
@@ -136,6 +203,11 @@ actor {
       case (#hiLo) { "hiLo" };
       case (#penaltyShootout) { "penaltyShootout" };
       case (#ballDrop) { "ballDrop" };
+      case (#snake) { "snake" };
+      case (#spaceShooter) { "spaceShooter" };
+      case (#breakout) { "breakout" };
+      case (#pacmanStyle) { "pacmanStyle" };
+      case (#whackAMole) { "whackAMole" };
     };
   };
 
@@ -288,6 +360,10 @@ actor {
           case (null) { 0 };
         };
         let role = if (AccessControl.isAdmin(accessControlState, p)) { "admin" } else { "user" };
+        let username = switch (ownerToUsername.get(p)) {
+          case (?u) { u };
+          case (null) { "" };
+        };
         {
           principal = p;
           name;
@@ -297,6 +373,7 @@ actor {
           joinDate;
           totalGamesPlayed;
           totalCreditsWon;
+          username;
         };
       },
     );
@@ -614,4 +691,428 @@ actor {
 
     newGame;
   };
+
+  // Username system
+  public shared ({ caller }) func setUsername(username : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can set username");
+    };
+
+    validateUsername(username);
+
+    switch (usernameToOwner.get(username)) {
+      case (?existingOwner) {
+        if (existingOwner == caller) {
+          Runtime.trap("Username already exists");
+        };
+        Runtime.trap("Username already exists");
+      };
+      case (null) {};
+    };
+
+    switch (ownerToUsername.get(caller)) {
+      case (?prevUsername) { usernameToOwner.remove(prevUsername) };
+      case (null) {};
+    };
+
+    usernameToOwner.add(username, caller);
+    ownerToUsername.add(caller, username);
+
+    let userProfile = switch (userProfiles.get(caller)) {
+      case (?profile) {
+        {
+          profile with
+          username
+        };
+      };
+      case (null) { Runtime.trap("User profile not found. Please save profile first") };
+    };
+    userProfiles.add(caller, userProfile);
+  };
+
+  func validateUsername(username : Text) {
+    if (username.size() < 4) {
+      Runtime.trap("Username must be at least 4 characters");
+    };
+    if (username.size() > 7) {
+      Runtime.trap("Username must be less than 8 characters");
+    };
+
+    var hasDigit = false;
+    var digitCount = 0;
+    var consecutiveDigits = 0;
+    var hasAlpha = false;
+
+    var consecutiveSameChars = 1;
+    var lastChar : ?Char = null;
+
+    for (c in username.chars()) {
+      if (c == ' ') { Runtime.trap("Spaces are not allowed") };
+
+      let isDigit = c >= '0' and c <= '9';
+      let isAlpha = (c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z');
+
+      if (isDigit) {
+        hasDigit := true;
+        digitCount += 1;
+        consecutiveDigits += 1;
+      } else if (isAlpha) {
+        hasAlpha := true;
+        if (consecutiveDigits > 0) { consecutiveDigits := 0 };
+      };
+
+      switch (lastChar) {
+        case (?last) {
+          if (c == last) { consecutiveSameChars += 1 };
+          if (consecutiveSameChars > 3) {
+            Runtime.trap("No more than 3 consecutive characters allowed (" # c.toText() # ")");
+          };
+        };
+        case (null) {};
+      };
+      lastChar := ?c;
+    };
+
+    if (not hasDigit or digitCount < 2) { Runtime.trap("At least 2 digits required") };
+    if (not hasAlpha) { Runtime.trap("At least 1 letter required") };
+    if (consecutiveDigits > 3) { Runtime.trap("No more than 3 consecutive digits") };
+  };
+
+  public query func getUsernameByPrincipal(user : Principal) : async ?Text {
+    ownerToUsername.get(user);
+  };
+
+  public query ({ caller }) func getUserByUsername(username : Text) : async ?Principal {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can get user by username");
+    };
+    if (username.trim(#char ' ').size() == 0) { return null };
+    usernameToOwner.get(username);
+  };
+
+  public shared ({ caller }) func addCreditsByUsername(username : Text, amount : Nat) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can add credits");
+    };
+
+    if (username.trim(#char ' ').size() == 0) {
+      Runtime.trap("Username cannot be empty");
+    };
+
+    let user = switch (usernameToOwner.get(username)) {
+      case (?user) { user };
+      case (null) { Runtime.trap("Username not found") };
+    };
+
+    var currentBalance = switch (userBalances.get(user)) {
+      case (?balance) { balance }; case (null) { 0 };
+    };
+    currentBalance += amount;
+    userBalances.add(user, currentBalance);
+  };
+
+  // Friends system
+  public shared ({ caller }) func sendFriendRequest(toUsername : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can send friend requests");
+    };
+
+    if (toUsername.trim(#char ' ').size() == 0) { Runtime.trap("Username cannot be empty") };
+
+    let toPrincipal = switch (usernameToOwner.get(toUsername)) {
+      case (?p) { p };
+      case (null) { Runtime.trap("User not found") };
+    };
+
+    if (caller == toPrincipal) { Runtime.trap("Cannot add yourself as friend") };
+
+    let existingFriendsCaller = switch (friendsListMap.get(caller)) {
+      case (?list) { list };
+      case (null) { List.empty<Principal>() };
+    };
+    if (existingFriendsCaller.any(func(p) { p == toPrincipal })) {
+      Runtime.trap("Already friends");
+    };
+
+    let existingFriendsRecipient = switch (friendsListMap.get(toPrincipal)) {
+      case (?list) { list };
+      case (null) { List.empty<Principal>() };
+    };
+    if (existingFriendsRecipient.any(func(p) { p == caller })) {
+      Runtime.trap("Already friends");
+    };
+
+    let existingRequests = switch (pendingRequestsMap.get(toPrincipal)) {
+      case (?requests) { requests };
+      case (null) { List.empty<FriendRequest>() };
+    };
+    if (existingRequests.any(func(req) { req.from == caller })) {
+      Runtime.trap("Friend request already sent");
+    };
+
+    let newRequest : FriendRequest = {
+      from = caller;
+      to = toPrincipal;
+      timestamp = Time.now();
+    };
+
+    let updatedRequests = switch (pendingRequestsMap.get(toPrincipal)) {
+      case (?requests) {
+        requests.add(newRequest);
+        requests;
+      };
+      case (null) {
+        let newList = List.empty<FriendRequest>();
+        newList.add(newRequest);
+        newList;
+      };
+    };
+    pendingRequestsMap.add(toPrincipal, updatedRequests);
+  };
+
+  public shared ({ caller }) func respondFriendRequest(fromPrincipal : Principal, accept : Bool) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can respond to friend requests");
+    };
+
+    if (fromPrincipal == caller) { Runtime.trap("Invalid operation") };
+
+    let callerRequests = switch (pendingRequestsMap.get(caller)) {
+      case (?requests) { requests };
+      case (null) { List.empty<FriendRequest>() };
+    };
+
+    let hasRequest = callerRequests.any(func(r) { r.from == fromPrincipal });
+    if (not hasRequest) {
+      Runtime.trap("Friend request not found");
+    };
+
+    pendingRequestsMap.add(
+      caller,
+      callerRequests.filter(func(r) { r.from != fromPrincipal })
+    );
+
+    if (accept) {
+      let callerFriends = switch (friendsListMap.get(caller)) {
+        case (?list) { list };
+        case (null) { List.empty<Principal>() };
+      };
+      if (not callerFriends.any(func(p) { p == fromPrincipal })) {
+        let newCallerFriends = List.empty<Principal>();
+        newCallerFriends.add(fromPrincipal);
+        callerFriends.values().toArray().forEach(func(friend) { newCallerFriends.add(friend) });
+        friendsListMap.add(caller, newCallerFriends);
+      };
+
+      let fromFriends = switch (friendsListMap.get(fromPrincipal)) {
+        case (?list) { list };
+        case (null) { List.empty<Principal>() };
+      };
+      if (not fromFriends.any(func(p) { p == caller })) {
+        let newFromFriends = List.empty<Principal>();
+        newFromFriends.add(caller);
+        fromFriends.values().toArray().forEach(func(friend) { newFromFriends.add(friend) });
+        friendsListMap.add(fromPrincipal, newFromFriends);
+      };
+    };
+  };
+
+  public shared ({ caller }) func removeFriend(friendPrincipal : Principal) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can remove friends");
+    };
+
+    let existingFriends = switch (friendsListMap.get(caller)) {
+      case (?list) { list };
+      case (null) { List.empty<Principal>() };
+    };
+    if (not existingFriends.any(func(p) { p == friendPrincipal })) {
+      Runtime.trap("Friend not found in friend list");
+    };
+
+    pendingRequestsMap.remove(friendPrincipal);
+
+    let updatedFriendsCaller = existingFriends.filter(func(p) { p != friendPrincipal });
+    friendsListMap.add(caller, updatedFriendsCaller);
+
+    let friendsList = switch (friendsListMap.get(friendPrincipal)) {
+      case (?list) { list };
+      case (null) { List.empty<Principal>() };
+    };
+    let updatedFriendsOther = friendsList.filter(func(p) { p != caller });
+    friendsListMap.add(friendPrincipal, updatedFriendsOther);
+  };
+
+  public query ({ caller }) func getFriendRequests() : async [{ from : Principal; fromUsername : Text; timestamp : Time.Time }] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+
+    let requests = switch (pendingRequestsMap.get(caller)) {
+      case (?requests) { requests };
+      case (null) { List.empty<FriendRequest>() };
+    };
+
+    let filteredRequests = requests.filter(
+      func(req) { req.from != caller }
+    );
+
+    filteredRequests.toArray().map(
+      func(req) {
+        {
+          from = req.from;
+          fromUsername = switch (ownerToUsername.get(req.from)) {
+            case (?username) { username }; case (null) { "" };
+          };
+          timestamp = req.timestamp;
+        };
+      }
+    );
+  };
+
+  public query ({ caller }) func getFriends() : async [FriendInfo] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized");
+    };
+
+    let friends = switch (friendsListMap.get(caller)) {
+      case (?friends) { friends };
+      case (null) { List.empty<Principal>() };
+    };
+
+    friends.toArray().filter(
+      func(p) {
+        let isValid = switch (ownerToUsername.get(p)) {
+          case (?username) {
+            username != "" and username.trim(#char ' ').size() > 0
+          };
+          case (null) { false };
+        };
+        isValid;
+      }
+    ).map(
+      func(p) { { principal = p; username = switch (ownerToUsername.get(p)) { case (?u) { u }; case (null) { "" } } } }
+    );
+  };
+
+  // Game Challenge System
+  public shared ({ caller }) func sendGameChallenge(toUsername : Text, gameType : GameType, bet : Nat) : async GameChallenge {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can send game challenges");
+    };
+
+    if (toUsername.trim(#char ' ').size() == 0) {
+      Runtime.trap("Username cannot be empty");
+    };
+
+    let toPrincipal = switch (usernameToOwner.get(toUsername)) {
+      case (?p) { p };
+      case (null) { Runtime.trap("User not found") };
+    };
+
+    if (caller == toPrincipal) {
+      Runtime.trap("Cannot challenge yourself");
+    };
+
+    // Verify friendship
+    let callerFriends = switch (friendsListMap.get(caller)) {
+      case (?list) { list };
+      case (null) { List.empty<Principal>() };
+    };
+    if (not callerFriends.any(func(p) { p == toPrincipal })) {
+      Runtime.trap("Can only challenge friends");
+    };
+
+    let challenge : GameChallenge = {
+      id = nextChallengeId.toText();
+      from = caller;
+      to = toPrincipal;
+      gameType;
+      bet;
+      timestamp = Time.now();
+      status = "Pending";
+    };
+
+    challengesMap.add(challenge.id, challenge);
+    nextChallengeId += 1;
+    challenge;
+  };
+
+  public shared ({ caller }) func respondGameChallenge(challengeId : Text, accept : Bool) : async GameChallenge {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can respond to challenges");
+    };
+
+    let challenge = switch (challengesMap.get(challengeId)) {
+      case (?c) { c };
+      case (null) { Runtime.trap("Challenge not found") };
+    };
+
+    // Only the recipient can respond
+    if (challenge.to != caller) {
+      Runtime.trap("Unauthorized: Only the challenge recipient can respond");
+    };
+
+    if (challenge.status != "Pending") {
+      Runtime.trap("Challenge is no longer pending");
+    };
+
+    let newStatus = if (accept) { "Accepted" } else { "Declined" };
+    let updatedChallenge : GameChallenge = {
+      challenge with status = newStatus;
+    };
+
+    challengesMap.add(challengeId, updatedChallenge);
+    updatedChallenge;
+  };
+
+  public query ({ caller }) func getPendingChallenges() : async [GameChallenge] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view challenges");
+    };
+
+    let allChallenges = challengesMap.values().toArray();
+    allChallenges.filter(
+      func(c) { c.to == caller and c.status == "Pending" }
+    );
+  };
+
+  public query ({ caller }) func getSentChallenges() : async [GameChallenge] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view challenges");
+    };
+
+    let allChallenges = challengesMap.values().toArray();
+    allChallenges.filter(
+      func(c) { c.from == caller }
+    );
+  };
+
+  public shared ({ caller }) func cancelGameChallenge(challengeId : Text) : async GameChallenge {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can cancel challenges");
+    };
+
+    let challenge = switch (challengesMap.get(challengeId)) {
+      case (?c) { c };
+      case (null) { Runtime.trap("Challenge not found") };
+    };
+
+    // Only the sender can cancel
+    if (challenge.from != caller) {
+      Runtime.trap("Unauthorized: Only the challenge sender can cancel");
+    };
+
+    if (challenge.status != "Pending") {
+      Runtime.trap("Can only cancel pending challenges");
+    };
+
+    let updatedChallenge : GameChallenge = {
+      challenge with status = "Declined";
+    };
+
+    challengesMap.add(challengeId, updatedChallenge);
+    updatedChallenge;
+  };
+
 };

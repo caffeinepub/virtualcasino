@@ -191,6 +191,41 @@ const ARCADE_GAMES = [
     description: "Drop & Win",
     color: "oklch(0.55 0.25 290)",
   },
+  {
+    id: GameType.snake,
+    label: "Snake",
+    emoji: "🐍",
+    description: "Classic Snake",
+    color: "oklch(0.68 0.22 150)",
+  },
+  {
+    id: GameType.spaceShooter,
+    label: "Space Shooter",
+    emoji: "🚀",
+    description: "Shoot to Win",
+    color: "oklch(0.62 0.22 240)",
+  },
+  {
+    id: GameType.breakout,
+    label: "Breakout",
+    emoji: "🧱",
+    description: "Break the Bricks",
+    color: "oklch(0.78 0.18 72)",
+  },
+  {
+    id: GameType.pacmanStyle,
+    label: "Pac-Man",
+    emoji: "👾",
+    description: "Eat the Dots",
+    color: "oklch(0.65 0.28 340)",
+  },
+  {
+    id: GameType.whackAMole,
+    label: "Whack-a-Mole",
+    emoji: "🔨",
+    description: "Whack 'Em!",
+    color: "oklch(0.60 0.24 20)",
+  },
 ];
 
 const ALL_GAMES = [...CASINO_GAMES, ...ARCADE_GAMES];

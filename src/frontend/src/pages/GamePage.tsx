@@ -8,15 +8,34 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { GameResult, GameType } from "../backend.d";
 import BaccaratGame from "../components/games/BaccaratGame";
+import BallDropGame from "../components/games/BallDropGame";
 import BlackjackGame from "../components/games/BlackjackGame";
+import BreakoutGame from "../components/games/BreakoutGame";
+import CaribbeanStudGame from "../components/games/CaribbeanStudGame";
+import CasinoHoldemGame from "../components/games/CasinoHoldemGame";
+import CoinPusherGame from "../components/games/CoinPusherGame";
 import CrapsGame from "../components/games/CrapsGame";
+import CrashGame from "../components/games/CrashGame";
 import DiceGame from "../components/games/DiceGame";
+import HiLoGame from "../components/games/HiLoGame";
 import KenoGame from "../components/games/KenoGame";
+import LetItRideGame from "../components/games/LetItRideGame";
+import LimboGame from "../components/games/LimboGame";
+import MinesGame from "../components/games/MinesGame";
+import PacManGame from "../components/games/PacManGame";
+import PaiGowPokerGame from "../components/games/PaiGowPokerGame";
+import PenaltyShootoutGame from "../components/games/PenaltyShootoutGame";
+import PlinkoGame from "../components/games/PlinkoGame";
 import RouletteGame from "../components/games/RouletteGame";
 import ScratchCardsGame from "../components/games/ScratchCardsGame";
+import SicBoGame from "../components/games/SicBoGame";
 import SlotsGame from "../components/games/SlotsGame";
+import SnakeGame from "../components/games/SnakeGame";
+import SpaceShooterGame from "../components/games/SpaceShooterGame";
+import ThreeCardPokerGame from "../components/games/ThreeCardPokerGame";
 import VideoPokerGame from "../components/games/VideoPokerGame";
 import WarGame from "../components/games/WarGame";
+import WhackAMoleGame from "../components/games/WhackAMoleGame";
 import WheelOfFortuneGame from "../components/games/WheelOfFortuneGame";
 import { useGetWalletBalance, usePlayGame } from "../hooks/useQueries";
 
@@ -207,6 +226,44 @@ const GAME_INFO: Record<
     rules: "Drop the ball through pegs to land in a prize slot.",
     color: "oklch(0.55 0.25 290)",
   },
+  [GameType.snake]: {
+    label: "Snake",
+    emoji: "🐍",
+    description: "Classic Snake!",
+    rules:
+      "Eat food to grow. Score 5=1.5x, 10=2x, 20=3x. Don't hit walls or yourself!",
+    color: "oklch(0.68 0.22 150)",
+  },
+  [GameType.spaceShooter]: {
+    label: "Space Shooter",
+    emoji: "🚀",
+    description: "Shoot aliens to win!",
+    rules:
+      "Destroy all alien waves to win 2x your bet. Arrow keys + Space to shoot.",
+    color: "oklch(0.62 0.22 240)",
+  },
+  [GameType.breakout]: {
+    label: "Breakout",
+    emoji: "🧱",
+    description: "Break all the bricks!",
+    rules:
+      "Break all 40 bricks to win 2x. Mouse/touch or arrow keys to move paddle.",
+    color: "oklch(0.78 0.18 72)",
+  },
+  [GameType.pacmanStyle]: {
+    label: "Pac-Man",
+    emoji: "👾",
+    description: "Eat all the dots!",
+    rules: "Eat every dot to win 2x. Avoid ghosts! Arrow keys or WASD to move.",
+    color: "oklch(0.65 0.28 340)",
+  },
+  [GameType.whackAMole]: {
+    label: "Whack-a-Mole",
+    emoji: "🔨",
+    description: "Whack those moles!",
+    rules: "Whack 8+ moles in 30 seconds to win 2x. Click/tap fast!",
+    color: "oklch(0.60 0.24 20)",
+  },
 };
 
 const FEATURED_GAMES = new Set([
@@ -221,6 +278,25 @@ const FEATURED_GAMES = new Set([
   GameType.wheelOfFortune,
   GameType.scratchCards,
   GameType.keno,
+  GameType.threeCardPoker,
+  GameType.paiGowPoker,
+  GameType.sicBo,
+  GameType.caribbeanStud,
+  GameType.letItRide,
+  GameType.casinoHoldem,
+  GameType.coinPusher,
+  GameType.plinko,
+  GameType.crashGame,
+  GameType.mines,
+  GameType.limbo,
+  GameType.hiLo,
+  GameType.penaltyShootout,
+  GameType.ballDrop,
+  GameType.snake,
+  GameType.spaceShooter,
+  GameType.breakout,
+  GameType.pacmanStyle,
+  GameType.whackAMole,
 ]);
 
 const QUICK_BETS = [5, 10, 25, 50, 100];
@@ -423,6 +499,120 @@ export default function GamePage() {
           )}
           {gameType === GameType.keno && (
             <KenoGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.threeCardPoker && (
+            <ThreeCardPokerGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.paiGowPoker && (
+            <PaiGowPokerGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.sicBo && (
+            <SicBoGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.caribbeanStud && (
+            <CaribbeanStudGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.letItRide && (
+            <LetItRideGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.casinoHoldem && (
+            <CasinoHoldemGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.coinPusher && (
+            <CoinPusherGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.plinko && (
+            <PlinkoGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.crashGame && (
+            <CrashGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.mines && (
+            <MinesGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.limbo && (
+            <LimboGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.hiLo && (
+            <HiLoGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.penaltyShootout && (
+            <PenaltyShootoutGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.ballDrop && (
+            <BallDropGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.snake && (
+            <SnakeGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.spaceShooter && (
+            <SpaceShooterGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.breakout && (
+            <BreakoutGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.pacmanStyle && (
+            <PacManGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.whackAMole && (
+            <WhackAMoleGame
               balance={balance ?? BigInt(0)}
               onGameComplete={onGameComplete}
             />

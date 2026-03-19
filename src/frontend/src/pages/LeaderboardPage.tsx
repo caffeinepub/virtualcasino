@@ -1,5 +1,7 @@
 import { Loader2, Medal, Trophy } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect, useState } from "react";
+import { useActor } from "../hooks/useActor";
 import { useGetDailyWinners } from "../hooks/useQueries";
 
 const SAMPLE_LEADERS = [
@@ -15,12 +17,40 @@ const SAMPLE_LEADERS = [
 
 export default function LeaderboardPage() {
   const { data: winners, isLoading } = useGetDailyWinners();
+  const { actor } = useActor();
+  const [usernameMap, setUsernameMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!actor || !winners || winners.length === 0) return;
+    const fetchUsernames = async () => {
+      const entries = await Promise.all(
+        winners.map(async (w) => {
+          try {
+            const name = await actor.getUsernameByPrincipal(w.user);
+            return [
+              w.user.toString(),
+              name ?? w.user.toString().slice(0, 12),
+            ] as [string, string];
+          } catch {
+            return [w.user.toString(), w.user.toString().slice(0, 12)] as [
+              string,
+              string,
+            ];
+          }
+        }),
+      );
+      setUsernameMap(Object.fromEntries(entries));
+    };
+    fetchUsernames();
+  }, [actor, winners]);
+
   const shuffled =
     winners && winners.length > 0
       ? [...winners]
           .sort(() => Math.random() - 0.5)
           .map((w) => ({
-            user: w.user.toString().slice(0, 12),
+            user:
+              usernameMap[w.user.toString()] ?? w.user.toString().slice(0, 12),
             amount: Number(w.amount),
             game: "Game",
           }))
@@ -160,7 +190,12 @@ export default function LeaderboardPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{w.user}...</p>
+                    <p
+                      className="text-sm font-black truncate"
+                      style={{ color: "oklch(0.55 0.25 290)" }}
+                    >
+                      @{w.user}
+                    </p>
                     <p className="text-xs text-muted-foreground">Player</p>
                   </div>
                   <span
@@ -170,7 +205,11 @@ export default function LeaderboardPage() {
                         i === 0
                           ? "oklch(0.78 0.18 72)"
                           : "oklch(0.65 0.28 340)",
-                      textShadow: `0 0 8px ${i === 0 ? "oklch(0.78 0.18 72 / 0.5)" : "oklch(0.65 0.28 340 / 0.5)"}`,
+                      textShadow: `0 0 8px ${
+                        i === 0
+                          ? "oklch(0.78 0.18 72 / 0.5)"
+                          : "oklch(0.65 0.28 340 / 0.5)"
+                      }`,
                     }}
                   >
                     +{w.amount}

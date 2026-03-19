@@ -7,9 +7,14 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface DailyWinner {
-    user: Principal;
-    amount: bigint;
+export interface GameChallenge {
+    id: string;
+    to: Principal;
+    bet: bigint;
+    status: string;
+    from: Principal;
+    timestamp: Time;
+    gameType: GameType;
 }
 export interface GameSettings {
     minBet: bigint;
@@ -17,6 +22,14 @@ export interface GameSettings {
     maxBet: bigint;
 }
 export type Time = bigint;
+export interface FriendInfo {
+    principal: Principal;
+    username: string;
+}
+export interface DailyWinner {
+    user: Principal;
+    amount: bigint;
+}
 export interface UserGame {
     bet: bigint;
     result: GameResult;
@@ -37,6 +50,7 @@ export interface RedemptionRequest {
 }
 export interface UserSummary {
     principal: Principal;
+    username: string;
     balance: bigint;
     joinDate: Time;
     name: string;
@@ -54,6 +68,7 @@ export interface Product {
     category: string;
 }
 export interface UserProfile {
+    username: string;
     name: string;
 }
 export enum GameResult {
@@ -65,8 +80,10 @@ export enum GameType {
     mines = "mines",
     penaltyShootout = "penaltyShootout",
     blackjack = "blackjack",
+    spaceShooter = "spaceShooter",
     ballDrop = "ballDrop",
     plinko = "plinko",
+    whackAMole = "whackAMole",
     dice = "dice",
     threeCardPoker = "threeCardPoker",
     hiLo = "hiLo",
@@ -78,6 +95,7 @@ export enum GameType {
     sicBo = "sicBo",
     baccarat = "baccarat",
     slots = "slots",
+    snake = "snake",
     caribbeanStud = "caribbeanStud",
     paiGowPoker = "paiGowPoker",
     letItRide = "letItRide",
@@ -85,7 +103,9 @@ export enum GameType {
     roulette = "roulette",
     casinoHoldem = "casinoHoldem",
     coinPusher = "coinPusher",
-    crashGame = "crashGame"
+    crashGame = "crashGame",
+    breakout = "breakout",
+    pacmanStyle = "pacmanStyle"
 }
 export enum UserRole {
     admin = "admin",
@@ -94,9 +114,11 @@ export enum UserRole {
 }
 export interface backendInterface {
     addCredits(user: Principal, amount: bigint): Promise<void>;
+    addCreditsByUsername(username: string, amount: bigint): Promise<void>;
     addProduct(name: string, description: string, category: string, pointPrice: bigint): Promise<Product>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     canClaimDailyCredits(): Promise<boolean>;
+    cancelGameChallenge(challengeId: string): Promise<GameChallenge>;
     claimDailyCredits(): Promise<void>;
     getAllGameSettings(): Promise<Array<[string, GameSettings]>>;
     getAllProducts(): Promise<Array<Product>>;
@@ -106,19 +128,36 @@ export interface backendInterface {
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyWinners(): Promise<Array<DailyWinner>>;
+    getFriendRequests(): Promise<Array<{
+        from: Principal;
+        timestamp: Time;
+        fromUsername: string;
+    }>>;
+    getFriends(): Promise<Array<FriendInfo>>;
     getGameHistory(user: Principal): Promise<Array<UserGame>>;
     getGameSettings(gameType: GameType): Promise<GameSettings | null>;
     getMyRedemptions(): Promise<Array<RedemptionRequest>>;
+    getPendingChallenges(): Promise<Array<GameChallenge>>;
     getPointsBalance(): Promise<bigint>;
+    getSentChallenges(): Promise<Array<GameChallenge>>;
+    getUserByUsername(username: string): Promise<Principal | null>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getUsernameByPrincipal(user: Principal): Promise<string | null>;
     getWalletBalance(): Promise<bigint>;
     initializeBalance(): Promise<void>;
     isCallerAdmin(): Promise<boolean>;
     playGame(gameType: GameType, bet: bigint): Promise<UserGame>;
+    recordGameOutcome(gameType: GameType, bet: bigint, won: boolean, winAmount: bigint): Promise<UserGame>;
     redeemProduct(productId: string): Promise<RedemptionRequest>;
+    removeFriend(friendPrincipal: Principal): Promise<void>;
     removeProduct(id: string): Promise<void>;
+    respondFriendRequest(fromPrincipal: Principal, accept: boolean): Promise<void>;
+    respondGameChallenge(challengeId: string, accept: boolean): Promise<GameChallenge>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    sendFriendRequest(toUsername: string): Promise<void>;
+    sendGameChallenge(toUsername: string, gameType: GameType, bet: bigint): Promise<GameChallenge>;
     setGameSettings(gameType: GameType, settings: GameSettings): Promise<void>;
+    setUsername(username: string): Promise<void>;
     updateProduct(id: string, name: string, description: string, category: string, pointPrice: bigint, available: boolean): Promise<Product>;
     updateRedemptionStatus(id: string, status: string): Promise<void>;
 }
