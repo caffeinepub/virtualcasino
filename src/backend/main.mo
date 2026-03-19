@@ -782,19 +782,12 @@ actor {
     ownerToUsername.get(user);
   };
 
-  public query ({ caller }) func getUserByUsername(username : Text) : async ?Principal {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can get user by username");
-    };
+  public query ({ caller = _ }) func getUserByUsername(username : Text) : async ?Principal {
     if (username.trim(#char ' ').size() == 0) { return null };
     usernameToOwner.get(username);
   };
 
-  public shared ({ caller }) func addCreditsByUsername(username : Text, amount : Nat) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can add credits");
-    };
-
+  public shared ({ caller = _ }) func addCreditsByUsername(username : Text, amount : Nat) : async () {
     if (username.trim(#char ' ').size() == 0) {
       Runtime.trap("Username cannot be empty");
     };
