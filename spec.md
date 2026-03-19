@@ -1,24 +1,18 @@
 # Cpm Vegas And Arcade
 
 ## Current State
-All 25 games use a single playGame backend function that randomly determines win/lose. GamePage shows a simple bet input and play button with no actual game mechanics.
+Step 1 casino games are live: Blackjack, Roulette, Slots, Video Poker all have dedicated game components with full IRL mechanics and use `useRecordGameOutcome` hook. All other 13 casino games fall through to a generic bet-and-play panel in GamePage.tsx. The cardUtils.ts file provides card utilities (createDeck, shuffleDeck, handValue, evaluatePokerHand, etc).
 
 ## Requested Changes (Diff)
 
 ### Add
-- recordGameOutcome(gameType, bet, won, winAmount) backend function: accepts frontend-determined result, updates balance/points/history
-- BlackjackGame component: full IRL rules (hit/stand/double/split), dealer AI stands on 17, proper hand evaluation
-- RouletteGame component: 0-36 number grid, inside/outside bets, wheel animation, proper payouts (35:1 single, 1:1 red/black)
-- SlotsGame component: 3-reel machine, symbol matching, animated reels, payout table
-- VideoPokerGame component: 5-card draw, hold/discard, hand rankings, proper payout table
+13 new dedicated game components with full IRL mechanics.
 
 ### Modify
-- GamePage.tsx: route blackjack/roulette/slots/videoPoker to dedicated game components
+GamePage.tsx: Import and wire all 13 new components so all casino games render dedicated components instead of the generic panel.
 
 ### Remove
-- Nothing
+Nothing.
 
 ## Implementation Plan
-1. Add recordGameOutcome to backend
-2. Build BlackjackGame, RouletteGame, SlotsGame, VideoPokerGame components
-3. Update GamePage to render correct component per game type
+Create 13 new game component files, then update GamePage.tsx to render them.

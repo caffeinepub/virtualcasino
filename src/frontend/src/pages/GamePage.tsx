@@ -7,10 +7,17 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameResult, GameType } from "../backend.d";
+import BaccaratGame from "../components/games/BaccaratGame";
 import BlackjackGame from "../components/games/BlackjackGame";
+import CrapsGame from "../components/games/CrapsGame";
+import DiceGame from "../components/games/DiceGame";
+import KenoGame from "../components/games/KenoGame";
 import RouletteGame from "../components/games/RouletteGame";
+import ScratchCardsGame from "../components/games/ScratchCardsGame";
 import SlotsGame from "../components/games/SlotsGame";
 import VideoPokerGame from "../components/games/VideoPokerGame";
+import WarGame from "../components/games/WarGame";
+import WheelOfFortuneGame from "../components/games/WheelOfFortuneGame";
 import { useGetWalletBalance, usePlayGame } from "../hooks/useQueries";
 
 const GAME_INFO: Record<
@@ -207,6 +214,13 @@ const FEATURED_GAMES = new Set([
   GameType.roulette,
   GameType.slots,
   GameType.videoPoker,
+  GameType.baccarat,
+  GameType.craps,
+  GameType.dice,
+  GameType.war,
+  GameType.wheelOfFortune,
+  GameType.scratchCards,
+  GameType.keno,
 ]);
 
 const QUICK_BETS = [5, 10, 25, 50, 100];
@@ -367,6 +381,48 @@ export default function GamePage() {
           )}
           {gameType === GameType.videoPoker && (
             <VideoPokerGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.baccarat && (
+            <BaccaratGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.craps && (
+            <CrapsGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.dice && (
+            <DiceGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.war && (
+            <WarGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.wheelOfFortune && (
+            <WheelOfFortuneGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.scratchCards && (
+            <ScratchCardsGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.keno && (
+            <KenoGame
               balance={balance ?? BigInt(0)}
               onGameComplete={onGameComplete}
             />
