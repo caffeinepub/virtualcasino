@@ -7,6 +7,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameResult, GameType } from "../backend.d";
+import BlackjackGame from "../components/games/BlackjackGame";
+import RouletteGame from "../components/games/RouletteGame";
+import SlotsGame from "../components/games/SlotsGame";
+import VideoPokerGame from "../components/games/VideoPokerGame";
 import { useGetWalletBalance, usePlayGame } from "../hooks/useQueries";
 
 const GAME_INFO: Record<
@@ -198,6 +202,13 @@ const GAME_INFO: Record<
   },
 };
 
+const FEATURED_GAMES = new Set([
+  GameType.blackjack,
+  GameType.roulette,
+  GameType.slots,
+  GameType.videoPoker,
+]);
+
 const QUICK_BETS = [5, 10, 25, 50, 100];
 
 export default function GamePage() {
@@ -210,7 +221,7 @@ export default function GamePage() {
   } | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const { data: balance } = useGetWalletBalance();
+  const { data: balance, refetch: refetchBalance } = useGetWalletBalance();
   const { mutateAsync: playGame, isPending } = usePlayGame();
 
   const gameInfo = GAME_INFO[gameType] ?? {
@@ -254,6 +265,12 @@ export default function GamePage() {
     }
   };
 
+  const onGameComplete = () => {
+    refetchBalance();
+  };
+
+  const isFeaturedGame = FEATURED_GAMES.has(gameType as GameType);
+
   return (
     <div className="min-h-full p-4 max-w-2xl mx-auto">
       <Button
@@ -266,6 +283,7 @@ export default function GamePage() {
         <ArrowLeft className="w-4 h-4 mr-1" /> Back to Lobby
       </Button>
 
+      {/* Game header banner */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -277,12 +295,11 @@ export default function GamePage() {
         }}
       >
         <div
-          className="h-44 flex flex-col items-center justify-center relative overflow-hidden"
+          className="h-32 flex flex-col items-center justify-center relative overflow-hidden"
           style={{
             background: `radial-gradient(ellipse at center, ${color}25, oklch(0.09 0.012 280))`,
           }}
         >
-          {/* Neon grid */}
           <div
             className="absolute inset-0 opacity-20"
             style={{
@@ -297,22 +314,19 @@ export default function GamePage() {
                 : {}
             }
             transition={{ duration: 0.5 }}
-            className="text-7xl mb-2 relative z-10"
+            className="text-5xl mb-1 relative z-10"
           >
             {gameInfo.emoji}
           </motion.div>
           <h1
-            className="font-display font-black text-2xl tracking-widest relative z-10"
+            className="font-display font-black text-xl tracking-widest relative z-10"
             style={{ color, textShadow: `0 0 20px ${color}` }}
           >
             {gameInfo.label.toUpperCase()}
           </h1>
-          <p className="text-sm text-foreground/60 mt-1 relative z-10">
-            {gameInfo.description}
-          </p>
         </div>
         <div
-          className="px-6 py-3 flex items-center justify-between"
+          className="px-4 py-2 flex items-center justify-between"
           style={{
             background: "oklch(0.13 0.015 282)",
             borderTop: `1px solid ${color}30`,
@@ -330,130 +344,163 @@ export default function GamePage() {
         </div>
       </motion.div>
 
-      <AnimatePresence mode="wait">
-        {lastResult && (
-          <motion.div
-            key={lastResult.result}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="rounded-xl p-4 mb-6 flex items-center gap-4"
-            style={{
-              background:
-                lastResult.result === GameResult.win
-                  ? "oklch(0.78 0.18 72 / 0.1)"
-                  : "oklch(0.577 0.245 27 / 0.1)",
-              border: `1px solid ${lastResult.result === GameResult.win ? "oklch(0.78 0.18 72 / 0.5)" : "oklch(0.577 0.245 27 / 0.5)"}`,
-              boxShadow:
-                lastResult.result === GameResult.win
-                  ? "0 0 20px oklch(0.78 0.18 72 / 0.2)"
-                  : "0 0 20px oklch(0.577 0.245 27 / 0.2)",
-            }}
-            data-ocid="game.result_state"
-          >
-            {lastResult.result === GameResult.win ? (
-              <Trophy className="w-8 h-8 text-gold" />
-            ) : (
-              <XCircle className="w-8 h-8 text-destructive" />
-            )}
-            <div>
-              <p
-                className={`font-black text-lg ${lastResult.result === GameResult.win ? "text-gold" : "text-destructive"}`}
-              >
-                {lastResult.result === GameResult.win
-                  ? "🎉 YOU WIN!"
-                  : "💸 YOU LOSE"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {lastResult.result === GameResult.win
-                  ? `+${lastResult.balanceChange.toString()} credits`
-                  : `-${bet} credits`}
-              </p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div
-        className="rounded-2xl p-6"
-        style={{
-          background: "oklch(0.11 0.015 280)",
-          border: "1px solid oklch(0.22 0.03 275)",
-        }}
-      >
-        <h3
-          className="font-display font-black tracking-widest mb-4"
-          style={{ color }}
-        >
-          PLACE YOUR BET
-        </h3>
-
-        <div className="flex gap-2 flex-wrap mb-4">
-          {QUICK_BETS.map((q) => (
-            <button
-              key={q}
-              type="button"
-              onClick={() => setBet(q.toString())}
-              className="px-4 py-2 rounded-lg text-xs font-black transition-all"
-              style={
-                bet === q.toString()
-                  ? {
-                      background: color,
-                      color: "#fff",
-                      boxShadow: `0 0 12px ${color}60`,
-                    }
-                  : {
-                      background: "oklch(0.16 0.025 278)",
-                      color: "oklch(0.60 0.02 270)",
-                      border: "1px solid oklch(0.22 0.03 275)",
-                    }
-              }
-              data-ocid="game.quickbet.button"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <Label
-              htmlFor="bet-amount"
-              className="text-sm text-muted-foreground"
-            >
-              Bet Amount (credits)
-            </Label>
-            <Input
-              id="bet-amount"
-              type="number"
-              min="1"
-              value={bet}
-              onChange={(e) => setBet(e.target.value)}
-              className="mt-1 bg-secondary border-border text-foreground text-lg font-bold"
-              data-ocid="game.bet.input"
+      {/* Featured games get dedicated components */}
+      {isFeaturedGame ? (
+        <div className="pb-8">
+          {gameType === GameType.blackjack && (
+            <BlackjackGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
             />
-          </div>
-          <Button
-            onClick={handlePlay}
-            disabled={isPending}
-            className="w-full py-6 text-base font-black tracking-widest border-none"
-            style={{
-              background: `linear-gradient(135deg, ${color}, oklch(0.55 0.25 290))`,
-              boxShadow: `0 0 20px ${color}50`,
-              color: "#fff",
-            }}
-            data-ocid="game.play_button"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin mr-2" /> PLAYING...
-              </>
-            ) : (
-              `🎮 PLAY FOR ${bet} CREDITS`
-            )}
-          </Button>
+          )}
+          {gameType === GameType.roulette && (
+            <RouletteGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.slots && (
+            <SlotsGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.videoPoker && (
+            <VideoPokerGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
         </div>
-      </div>
+      ) : (
+        /* Generic panel for all other games */
+        <>
+          <AnimatePresence mode="wait">
+            {lastResult && (
+              <motion.div
+                key={lastResult.result}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="rounded-xl p-4 mb-6 flex items-center gap-4"
+                style={{
+                  background:
+                    lastResult.result === GameResult.win
+                      ? "oklch(0.78 0.18 72 / 0.1)"
+                      : "oklch(0.577 0.245 27 / 0.1)",
+                  border: `1px solid ${lastResult.result === GameResult.win ? "oklch(0.78 0.18 72 / 0.5)" : "oklch(0.577 0.245 27 / 0.5)"}`,
+                  boxShadow:
+                    lastResult.result === GameResult.win
+                      ? "0 0 20px oklch(0.78 0.18 72 / 0.2)"
+                      : "0 0 20px oklch(0.577 0.245 27 / 0.2)",
+                }}
+                data-ocid="game.result_state"
+              >
+                {lastResult.result === GameResult.win ? (
+                  <Trophy className="w-8 h-8 text-gold" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-destructive" />
+                )}
+                <div>
+                  <p
+                    className={`font-black text-lg ${lastResult.result === GameResult.win ? "text-gold" : "text-destructive"}`}
+                  >
+                    {lastResult.result === GameResult.win
+                      ? "🎉 YOU WIN!"
+                      : "💸 YOU LOSE"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {lastResult.result === GameResult.win
+                      ? `+${lastResult.balanceChange.toString()} credits`
+                      : `-${bet} credits`}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div
+            className="rounded-2xl p-6"
+            style={{
+              background: "oklch(0.11 0.015 280)",
+              border: "1px solid oklch(0.22 0.03 275)",
+            }}
+          >
+            <h3
+              className="font-display font-black tracking-widest mb-4"
+              style={{ color }}
+            >
+              PLACE YOUR BET
+            </h3>
+
+            <div className="flex gap-2 flex-wrap mb-4">
+              {QUICK_BETS.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => setBet(q.toString())}
+                  className="px-4 py-2 rounded-lg text-xs font-black transition-all"
+                  style={
+                    bet === q.toString()
+                      ? {
+                          background: color,
+                          color: "#fff",
+                          boxShadow: `0 0 12px ${color}60`,
+                        }
+                      : {
+                          background: "oklch(0.16 0.025 278)",
+                          color: "oklch(0.60 0.02 270)",
+                          border: "1px solid oklch(0.22 0.03 275)",
+                        }
+                  }
+                  data-ocid="game.quickbet.button"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label
+                  htmlFor="bet-amount"
+                  className="text-sm text-muted-foreground"
+                >
+                  Bet Amount (credits)
+                </Label>
+                <Input
+                  id="bet-amount"
+                  type="number"
+                  min="1"
+                  value={bet}
+                  onChange={(e) => setBet(e.target.value)}
+                  className="mt-1 bg-secondary border-border text-foreground text-lg font-bold"
+                  data-ocid="game.bet.input"
+                />
+              </div>
+              <Button
+                onClick={handlePlay}
+                disabled={isPending}
+                className="w-full py-6 text-base font-black tracking-widest border-none"
+                style={{
+                  background: `linear-gradient(135deg, ${color}, oklch(0.55 0.25 290))`,
+                  boxShadow: `0 0 20px ${color}50`,
+                  color: "#fff",
+                }}
+                data-ocid="game.play_button"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> PLAYING...
+                  </>
+                ) : (
+                  `🎮 PLAY FOR ${bet} CREDITS`
+                )}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

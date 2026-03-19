@@ -549,4 +549,69 @@ actor {
     let all = redemptionsMap.values().toArray();
     all.filter(func(r) { r.user == caller });
   };
+
+  public shared ({ caller }) func recordGameOutcome(gameType : GameType, bet : Nat, won : Bool, winAmount : Nat) : async UserGame {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can play games");
+    };
+
+    var currentBalance = switch (userBalances.get(caller)) {
+      case (?balance) { balance };
+      case (null) { 0 };
+    };
+    if (bet > Int.abs(currentBalance)) {
+      Runtime.trap("Not enough credits to place bet");
+    };
+
+    currentBalance -= bet;
+
+    let result : GameResult = if (won) { #win } else { #lose };
+    var balanceChange : Int = 0;
+
+    if (won) {
+      balanceChange := winAmount.toInt();
+      currentBalance += winAmount;
+    } else {
+      balanceChange := -bet.toInt();
+    };
+
+    userBalances.add(caller, currentBalance);
+    casinoWallet -= balanceChange;
+
+    let newGame : UserGame = {
+      user = caller;
+      gameType;
+      bet;
+      result;
+      timestamp = Time.now();
+      balanceChange;
+    };
+
+    let userGameList = switch (gameHistory.get(caller)) {
+      case (?existingList) { existingList };
+      case (null) { List.empty<UserGame>() };
+    };
+    userGameList.add(newGame);
+    gameHistory.add(caller, userGameList);
+
+    let prevGames = switch (userTotalGamesPlayed.get(caller)) {
+      case (?n) { n }; case (null) { 0 };
+    };
+    userTotalGamesPlayed.add(caller, prevGames + 1);
+
+    if (won and winAmount > 0) {
+      dailyWinners.add({ user = caller; amount = balanceChange });
+      let prevWon = switch (userTotalCreditsWon.get(caller)) {
+        case (?n) { n }; case (null) { 0 };
+      };
+      userTotalCreditsWon.add(caller, prevWon + balanceChange);
+
+      let prevPoints = switch (userPoints.get(caller)) {
+        case (?n) { n }; case (null) { 0 };
+      };
+      userPoints.add(caller, prevPoints + winAmount);
+    };
+
+    newGame;
+  };
 };

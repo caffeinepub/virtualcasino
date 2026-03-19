@@ -404,3 +404,30 @@ export function useUpdateRedemptionStatus() {
     },
   });
 }
+
+export function useRecordGameOutcome() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      gameType,
+      bet,
+      won,
+      winAmount,
+    }: {
+      gameType: GameType;
+      bet: bigint;
+      won: boolean;
+      winAmount: bigint;
+    }) => {
+      if (!actor) throw new Error("Not connected");
+      return (actor as any).recordGameOutcome(gameType, bet, won, winAmount);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["walletBalance"] });
+      qc.invalidateQueries({ queryKey: ["gameHistory"] });
+      qc.invalidateQueries({ queryKey: ["dailyWinners"] });
+      qc.invalidateQueries({ queryKey: ["pointsBalance"] });
+    },
+  });
+}
