@@ -7,32 +7,44 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameResult, GameType } from "../backend.d";
+import AirHockeyGame from "../components/games/AirHockeyGame";
 import AsteroidsGame from "../components/games/AsteroidsGame";
 import BaccaratGame from "../components/games/BaccaratGame";
 import BallDropGame from "../components/games/BallDropGame";
 import BlackjackGame from "../components/games/BlackjackGame";
+import BombermanGame from "../components/games/BombermanGame";
 import BreakoutGame from "../components/games/BreakoutGame";
+import BurgerTimeGame from "../components/games/BurgerTimeGame";
 import CaribbeanStudGame from "../components/games/CaribbeanStudGame";
 import CasinoHoldemGame from "../components/games/CasinoHoldemGame";
 import CentipedeGame from "../components/games/CentipedeGame";
 import CoinPusherGame from "../components/games/CoinPusherGame";
 import CrapsGame from "../components/games/CrapsGame";
 import CrashGame from "../components/games/CrashGame";
+import DanceDanceRevolutionGame from "../components/games/DanceDanceRevolutionGame";
+import DaytonaUSAGame from "../components/games/DaytonaUSAGame";
 import DiceGame from "../components/games/DiceGame";
 import DigDugGame from "../components/games/DigDugGame";
 import DonkeyKongGame from "../components/games/DonkeyKongGame";
+import DuckHuntGame from "../components/games/DuckHuntGame";
 import FroggerGame from "../components/games/FroggerGame";
 import GalagaGame from "../components/games/GalagaGame";
 import HiLoGame from "../components/games/HiLoGame";
+import HouseOfTheDeadGame from "../components/games/HouseOfTheDeadGame";
 import KenoGame from "../components/games/KenoGame";
+import KungFuMasterGame from "../components/games/KungFuMasterGame";
 import LetItRideGame from "../components/games/LetItRideGame";
 import LimboGame from "../components/games/LimboGame";
+import MetalSlugGame from "../components/games/MetalSlugGame";
 import MinesGame from "../components/games/MinesGame";
+import MortalKombatGame from "../components/games/MortalKombatGame";
 import PacManGame from "../components/games/PacManGame";
 import PaiGowPokerGame from "../components/games/PaiGowPokerGame";
 import PenaltyShootoutGame from "../components/games/PenaltyShootoutGame";
 import PinballGame from "../components/games/PinballGame";
 import PlinkoGame from "../components/games/PlinkoGame";
+import PuzzleBobbleGame from "../components/games/PuzzleBobbleGame";
+import QbertGame from "../components/games/QbertGame";
 import RouletteGame from "../components/games/RouletteGame";
 import ScratchCardsGame from "../components/games/ScratchCardsGame";
 import SicBoGame from "../components/games/SicBoGame";
@@ -43,6 +55,9 @@ import SpaceShooterGame from "../components/games/SpaceShooterGame";
 import StreetFighterGame from "../components/games/StreetFighterGame";
 import TetrisGame from "../components/games/TetrisGame";
 import ThreeCardPokerGame from "../components/games/ThreeCardPokerGame";
+import TimeCrisisGame from "../components/games/TimeCrisisGame";
+import TrackAndFieldGame from "../components/games/TrackAndFieldGame";
+import TronGame from "../components/games/TronGame";
 import VideoPokerGame from "../components/games/VideoPokerGame";
 import WarGame from "../components/games/WarGame";
 import WhackAMoleGame from "../components/games/WhackAMoleGame";
@@ -344,6 +359,125 @@ const GAME_INFO: Record<
     rules: "Score 500+ points before losing 3 balls to win 2x. Earns points!",
     color: "oklch(0.72 0.18 300)",
   },
+  [GameType.danceDanceRevolution]: {
+    label: "Dance Dance Revolution",
+    emoji: "🕺",
+    description: "Match the beat!",
+    rules:
+      "Score 50 pts in 30s to win 2x. Arrow keys on desktop, tap on mobile. Pure skill.",
+    color: "oklch(0.65 0.28 330)",
+  },
+  [GameType.timeCrisis]: {
+    label: "Time Crisis",
+    emoji: "🔫",
+    description: "Shoot to survive!",
+    rules:
+      "Eliminate 8 enemies before time runs out to win 2x. Click/tap to shoot.",
+    color: "oklch(0.58 0.28 25)",
+  },
+  [GameType.duckHunt]: {
+    label: "Duck Hunt",
+    emoji: "🦆",
+    description: "Fire away!",
+    rules: "Hit 6 of 9 ducks across 3 rounds to win 2x. Click/tap to shoot.",
+    color: "oklch(0.68 0.22 50)",
+  },
+  [GameType.airHockey]: {
+    label: "Air Hockey",
+    emoji: "🏒",
+    description: "Goal streak!",
+    rules:
+      "First to 5 goals wins 2x. Move mouse/finger to control your paddle.",
+    color: "oklch(0.65 0.22 220)",
+  },
+  [GameType.qbert]: {
+    label: "Q*bert",
+    emoji: "🟠",
+    description: "Hop the pyramid!",
+    rules:
+      "Score 200 pts by coloring all cubes to win 2x. Arrow keys to hop, avoid enemies.",
+    color: "oklch(0.68 0.24 55)",
+  },
+  [GameType.tron]: {
+    label: "Tron",
+    emoji: "🏍️",
+    description: "Light cycle survival!",
+    rules:
+      "Survive 30 seconds without hitting a wall or your trail to win 2x. Arrow keys to steer. Pure skill.",
+    color: "oklch(0.65 0.28 200)",
+  },
+  [GameType.burgerTime]: {
+    label: "Burger Time",
+    emoji: "🍔",
+    description: "Stack the burger!",
+    rules:
+      "Complete 1 burger by walking over all 4 ingredients before losing 3 lives to win 2x. Arrow keys to move. Pure skill.",
+    color: "oklch(0.68 0.24 55)",
+  },
+  [GameType.metalSlug]: {
+    label: "Metal Slug",
+    emoji: "🔫",
+    description: "Run and gun!",
+    rules:
+      "Eliminate 10 enemies before time runs out to win 2x. Arrow keys to move, Space to shoot. Pure skill.",
+    color: "oklch(0.62 0.26 25)",
+  },
+  [GameType.bomberman]: {
+    label: "Bomberman",
+    emoji: "💣",
+    description: "Bomb the maze!",
+    rules:
+      "Clear all 3 enemies using bombs to win 2x. Arrow keys to move, Space to place bomb. Avoid your own blast. Pure skill.",
+    color: "oklch(0.68 0.22 280)",
+  },
+  [GameType.daytonaUSA]: {
+    label: "Daytona USA",
+    emoji: "🏎️",
+    description: "Race to the finish!",
+    rules:
+      "Hold ↑ to accelerate, ←/→ to steer. Complete 3 laps in 45s to win 2x. Pure skill.",
+    color: "oklch(0.70 0.22 55)",
+  },
+  [GameType.mortalKombat]: {
+    label: "Mortal Kombat",
+    emoji: "⚔️",
+    description: "Finish him!",
+    rules:
+      "←/→ move, Z=Punch, X=Kick, C=Special, S=Block. Defeat the enemy to win 2x. Pure skill.",
+    color: "oklch(0.55 0.28 25)",
+  },
+  [GameType.puzzleBobble]: {
+    label: "Puzzle Bobble",
+    emoji: "🫧",
+    description: "Pop all the bubbles!",
+    rules:
+      "Aim with ←/→, fire with Space. Match 3+ same color to clear. Empty the board to win 2x. Pure skill.",
+    color: "oklch(0.70 0.22 320)",
+  },
+  [GameType.houseOfTheDead]: {
+    label: "House of the Dead",
+    emoji: "🧟",
+    description: "Shoot the zombies!",
+    rules:
+      "Click/tap to shoot zombies. Kill 15 zombies in 30s to win 2x. R to reload. Pure skill.",
+    color: "oklch(0.58 0.22 145)",
+  },
+  [GameType.kungFuMaster]: {
+    label: "Kung Fu Master",
+    emoji: "🥋",
+    description: "Hi-Ya!",
+    rules:
+      "←/→ move, Z=Punch, X=Kick, ↓=Crouch. Score 500 points to win 2x. Pure skill.",
+    color: "oklch(0.65 0.22 75)",
+  },
+  [GameType.trackAndField]: {
+    label: "Track & Field",
+    emoji: "🏃",
+    description: "Sprint to victory!",
+    rules:
+      "Run 100m by rapidly alternating A and D keys (or Left/Right arrows). Beat 12 seconds to win 2x. Pure skill.",
+    color: "oklch(0.70 0.22 130)",
+  },
 };
 
 const FEATURED_GAMES = new Set([
@@ -387,6 +521,21 @@ const FEATURED_GAMES = new Set([
   GameType.digDug,
   GameType.skeeBall,
   GameType.pinball,
+  GameType.danceDanceRevolution,
+  GameType.timeCrisis,
+  GameType.duckHunt,
+  GameType.airHockey,
+  GameType.qbert,
+  GameType.tron,
+  GameType.burgerTime,
+  GameType.metalSlug,
+  GameType.bomberman,
+  GameType.trackAndField,
+  GameType.daytonaUSA,
+  GameType.mortalKombat,
+  GameType.puzzleBobble,
+  GameType.houseOfTheDead,
+  GameType.kungFuMaster,
 ]);
 
 const QUICK_BETS = [5, 10, 25, 50, 100];
@@ -763,6 +912,96 @@ export default function GamePage() {
           )}
           {gameType === GameType.pinball && (
             <PinballGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.danceDanceRevolution && (
+            <DanceDanceRevolutionGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.timeCrisis && (
+            <TimeCrisisGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.duckHunt && (
+            <DuckHuntGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.airHockey && (
+            <AirHockeyGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.qbert && (
+            <QbertGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.tron && (
+            <TronGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.burgerTime && (
+            <BurgerTimeGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.metalSlug && (
+            <MetalSlugGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.bomberman && (
+            <BombermanGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.trackAndField && (
+            <TrackAndFieldGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.daytonaUSA && (
+            <DaytonaUSAGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.mortalKombat && (
+            <MortalKombatGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.puzzleBobble && (
+            <PuzzleBobbleGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.houseOfTheDead && (
+            <HouseOfTheDeadGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.kungFuMaster && (
+            <KungFuMasterGame
               balance={balance ?? BigInt(0)}
               onGameComplete={onGameComplete}
             />

@@ -296,10 +296,114 @@ const ARCADE_GAMES = [
     description: "Flipper Frenzy",
     color: "oklch(0.72 0.18 300)",
   },
+  {
+    id: GameType.danceDanceRevolution,
+    label: "Dance Dance Revolution",
+    emoji: "🕺",
+    description: "Match the Beat",
+    color: "oklch(0.65 0.28 330)",
+  },
+  {
+    id: GameType.timeCrisis,
+    label: "Time Crisis",
+    emoji: "🔫",
+    description: "Shoot to Survive",
+    color: "oklch(0.58 0.28 25)",
+  },
+  {
+    id: GameType.duckHunt,
+    label: "Duck Hunt",
+    emoji: "🦆",
+    description: "Fire Away!",
+    color: "oklch(0.68 0.22 50)",
+  },
+  {
+    id: GameType.airHockey,
+    label: "Air Hockey",
+    emoji: "🏒",
+    description: "Goal Streak",
+    color: "oklch(0.65 0.22 220)",
+  },
+  {
+    id: GameType.qbert,
+    label: "Q*bert",
+    emoji: "🟠",
+    description: "Hop the Pyramid",
+    color: "oklch(0.68 0.24 55)",
+  },
+  {
+    id: GameType.tron,
+    label: "Tron",
+    emoji: "🏍️",
+    description: "Light Cycle Survival",
+    color: "oklch(0.65 0.28 200)",
+  },
+  {
+    id: GameType.burgerTime,
+    label: "Burger Time",
+    emoji: "🍔",
+    description: "Stack the Burger",
+    color: "oklch(0.68 0.24 55)",
+  },
+  {
+    id: GameType.metalSlug,
+    label: "Metal Slug",
+    emoji: "🔫",
+    description: "Run and Gun",
+    color: "oklch(0.62 0.26 25)",
+  },
+  {
+    id: GameType.bomberman,
+    label: "Bomberman",
+    emoji: "💣",
+    description: "Bomb the Maze",
+    color: "oklch(0.68 0.22 280)",
+  },
+  {
+    id: GameType.trackAndField,
+    label: "Track & Field",
+    emoji: "🏃",
+    description: "Sprint to Victory",
+    color: "oklch(0.70 0.22 130)",
+  },
+  {
+    id: GameType.daytonaUSA,
+    label: "Daytona USA",
+    emoji: "🏎️",
+    description: "Race to the Finish",
+    color: "oklch(0.70 0.22 55)",
+  },
+  {
+    id: GameType.mortalKombat,
+    label: "Mortal Kombat",
+    emoji: "⚔️",
+    description: "Finish Him",
+    color: "oklch(0.55 0.28 25)",
+  },
+  {
+    id: GameType.puzzleBobble,
+    label: "Puzzle Bobble",
+    emoji: "🫧",
+    description: "Pop the Bubbles",
+    color: "oklch(0.70 0.22 320)",
+  },
+  {
+    id: GameType.houseOfTheDead,
+    label: "House of the Dead",
+    emoji: "🧟",
+    description: "Shoot the Zombies",
+    color: "oklch(0.58 0.22 145)",
+  },
+  {
+    id: GameType.kungFuMaster,
+    label: "Kung Fu Master",
+    emoji: "🥋",
+    description: "Hi-Ya!",
+    color: "oklch(0.65 0.22 75)",
+  },
 ];
 
 const ALL_GAMES = [...CASINO_GAMES, ...ARCADE_GAMES];
-
 function getDailyFeatured(count: number) {
   const seed = new Date().toDateString();
   let hash = 0;

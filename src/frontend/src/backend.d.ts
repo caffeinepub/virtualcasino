@@ -115,7 +115,22 @@ export enum GameType {
     centipede = "centipede",
     digDug = "digDug",
     skeeBall = "skeeBall",
-    pinball = "pinball"
+    pinball = "pinball",
+    danceDanceRevolution = "danceDanceRevolution",
+    timeCrisis = "timeCrisis",
+    duckHunt = "duckHunt",
+    airHockey = "airHockey",
+    qbert = "qbert",
+    tron = "tron",
+    burgerTime = "burgerTime",
+    metalSlug = "metalSlug",
+    bomberman = "bomberman",
+    trackAndField = "trackAndField",
+    daytonaUSA = "daytonaUSA",
+    mortalKombat = "mortalKombat",
+    puzzleBobble = "puzzleBobble",
+    houseOfTheDead = "houseOfTheDead",
+    kungFuMaster = "kungFuMaster"
 }
 export enum UserRole {
     admin = "admin",
