@@ -226,6 +226,76 @@ const ARCADE_GAMES = [
     description: "Whack 'Em!",
     color: "oklch(0.60 0.24 20)",
   },
+  {
+    id: GameType.tetris,
+    label: "Tetris",
+    emoji: "🟦",
+    description: "Stack the Blocks",
+    color: "oklch(0.62 0.22 240)",
+  },
+  {
+    id: GameType.galaga,
+    label: "Galaga",
+    emoji: "🛸",
+    description: "Shoot the Aliens",
+    color: "oklch(0.65 0.28 30)",
+  },
+  {
+    id: GameType.frogger,
+    label: "Frogger",
+    emoji: "🐸",
+    description: "Cross the Road",
+    color: "oklch(0.68 0.22 150)",
+  },
+  {
+    id: GameType.streetFighter,
+    label: "Street Fighter",
+    emoji: "🥊",
+    description: "Fight the CPU",
+    color: "oklch(0.60 0.28 15)",
+  },
+  {
+    id: GameType.donkeyKong,
+    label: "Donkey Kong",
+    emoji: "🦍",
+    description: "Dodge the Barrels",
+    color: "oklch(0.65 0.22 55)",
+  },
+  {
+    id: GameType.asteroids,
+    label: "Asteroids",
+    emoji: "☄️",
+    description: "Blast Asteroids",
+    color: "oklch(0.72 0.22 180)",
+  },
+  {
+    id: GameType.centipede,
+    label: "Centipede",
+    emoji: "🐛",
+    description: "Stop the Swarm",
+    color: "oklch(0.70 0.26 135)",
+  },
+  {
+    id: GameType.digDug,
+    label: "Dig Dug",
+    emoji: "⛏️",
+    description: "Dig & Defeat",
+    color: "oklch(0.72 0.22 55)",
+  },
+  {
+    id: GameType.skeeBall,
+    label: "Skee-Ball",
+    emoji: "🎳",
+    description: "Roll for Tickets",
+    color: "oklch(0.72 0.22 55)",
+  },
+  {
+    id: GameType.pinball,
+    label: "Pinball",
+    emoji: "🕹️",
+    description: "Flipper Frenzy",
+    color: "oklch(0.72 0.18 300)",
+  },
 ];
 
 const ALL_GAMES = [...CASINO_GAMES, ...ARCADE_GAMES];
@@ -278,7 +348,6 @@ export default function LobbyPage() {
     return [...list].sort(() => Math.random() - 0.5);
   }, [winners]);
 
-  // Combine real winners with sample for display when empty
   const displayWinners =
     shuffledWinners.length > 0
       ? shuffledWinners.map((w) => ({
@@ -308,23 +377,16 @@ export default function LobbyPage() {
       {/* ===== HERO BANNER ===== */}
       <section
         className="relative overflow-hidden"
-        style={{
-          background: "oklch(0.08 0.01 280)",
-          minHeight: 320,
-        }}
+        style={{ background: "oklch(0.08 0.01 280)", minHeight: 320 }}
       >
-        {/* Neon grid background */}
         <div
           className="absolute inset-0 opacity-20"
           style={{
-            backgroundImage: `
-              linear-gradient(oklch(0.65 0.28 340 / 0.3) 1px, transparent 1px),
-              linear-gradient(90deg, oklch(0.65 0.28 340 / 0.3) 1px, transparent 1px)
-            `,
+            backgroundImage:
+              "linear-gradient(oklch(0.65 0.28 340 / 0.3) 1px, transparent 1px), linear-gradient(90deg, oklch(0.65 0.28 340 / 0.3) 1px, transparent 1px)",
             backgroundSize: "40px 40px",
           }}
         />
-        {/* Radial glows */}
         <div
           className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-20"
           style={{ background: "oklch(0.65 0.28 340)", filter: "blur(80px)" }}
@@ -379,7 +441,7 @@ export default function LobbyPage() {
               AND ARCADE
             </h1>
             <p className="text-muted-foreground text-lg mb-8">
-              25 GAMES · CASINO &amp; ARCADE · WIN TODAY
+              {ALL_GAMES.length} GAMES · CASINO &amp; ARCADE · WIN TODAY
             </p>
             <Link to="/games">
               <motion.button
@@ -441,7 +503,6 @@ export default function LobbyPage() {
 
       {/* ===== MAIN CONTENT ===== */}
       <div className="px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-        {/* Left: Games */}
         <div className="lg:col-span-2 space-y-8">
           {/* Most Popular Today */}
           <section>
@@ -528,7 +589,6 @@ export default function LobbyPage() {
                 <TabsTrigger
                   value="all"
                   className="text-xs font-black tracking-wider data-[state=active]:text-foreground"
-                  style={{}}
                   data-ocid="games.all.tab"
                 >
                   ALL ({ALL_GAMES.length})
@@ -572,7 +632,6 @@ export default function LobbyPage() {
 
         {/* Right: Scoreboard */}
         <div className="space-y-6">
-          {/* Today's Winners scoreboard */}
           <div
             className="rounded-xl overflow-hidden"
             style={{
@@ -670,7 +729,6 @@ export default function LobbyPage() {
             </div>
           </div>
 
-          {/* Upcoming Tournaments */}
           <div
             className="rounded-xl p-4"
             style={{

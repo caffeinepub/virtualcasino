@@ -7,16 +7,22 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { GameResult, GameType } from "../backend.d";
+import AsteroidsGame from "../components/games/AsteroidsGame";
 import BaccaratGame from "../components/games/BaccaratGame";
 import BallDropGame from "../components/games/BallDropGame";
 import BlackjackGame from "../components/games/BlackjackGame";
 import BreakoutGame from "../components/games/BreakoutGame";
 import CaribbeanStudGame from "../components/games/CaribbeanStudGame";
 import CasinoHoldemGame from "../components/games/CasinoHoldemGame";
+import CentipedeGame from "../components/games/CentipedeGame";
 import CoinPusherGame from "../components/games/CoinPusherGame";
 import CrapsGame from "../components/games/CrapsGame";
 import CrashGame from "../components/games/CrashGame";
 import DiceGame from "../components/games/DiceGame";
+import DigDugGame from "../components/games/DigDugGame";
+import DonkeyKongGame from "../components/games/DonkeyKongGame";
+import FroggerGame from "../components/games/FroggerGame";
+import GalagaGame from "../components/games/GalagaGame";
 import HiLoGame from "../components/games/HiLoGame";
 import KenoGame from "../components/games/KenoGame";
 import LetItRideGame from "../components/games/LetItRideGame";
@@ -25,13 +31,17 @@ import MinesGame from "../components/games/MinesGame";
 import PacManGame from "../components/games/PacManGame";
 import PaiGowPokerGame from "../components/games/PaiGowPokerGame";
 import PenaltyShootoutGame from "../components/games/PenaltyShootoutGame";
+import PinballGame from "../components/games/PinballGame";
 import PlinkoGame from "../components/games/PlinkoGame";
 import RouletteGame from "../components/games/RouletteGame";
 import ScratchCardsGame from "../components/games/ScratchCardsGame";
 import SicBoGame from "../components/games/SicBoGame";
+import SkeeBallGame from "../components/games/SkeeBallGame";
 import SlotsGame from "../components/games/SlotsGame";
 import SnakeGame from "../components/games/SnakeGame";
 import SpaceShooterGame from "../components/games/SpaceShooterGame";
+import StreetFighterGame from "../components/games/StreetFighterGame";
+import TetrisGame from "../components/games/TetrisGame";
 import ThreeCardPokerGame from "../components/games/ThreeCardPokerGame";
 import VideoPokerGame from "../components/games/VideoPokerGame";
 import WarGame from "../components/games/WarGame";
@@ -264,6 +274,76 @@ const GAME_INFO: Record<
     rules: "Whack 8+ moles in 30 seconds to win 2x. Click/tap fast!",
     color: "oklch(0.60 0.24 20)",
   },
+  [GameType.tetris]: {
+    label: "Tetris",
+    emoji: "🟦",
+    description: "Stack the blocks!",
+    rules: "Score 50=1.5x, 100=2x, 200=3x. Don't let blocks reach the top!",
+    color: "oklch(0.62 0.22 240)",
+  },
+  [GameType.galaga]: {
+    label: "Galaga",
+    emoji: "🛸",
+    description: "Destroy the alien fleet!",
+    rules: "Shoot all 20 aliens to win 2x. Arrow keys + Space.",
+    color: "oklch(0.65 0.28 30)",
+  },
+  [GameType.frogger]: {
+    label: "Frogger",
+    emoji: "🐸",
+    description: "Cross safely!",
+    rules: "Guide your frog across traffic and river to win 2x.",
+    color: "oklch(0.68 0.22 150)",
+  },
+  [GameType.streetFighter]: {
+    label: "Street Fighter",
+    emoji: "🥊",
+    description: "Fight the CPU!",
+    rules: "Defeat the CPU fighter to win 2x. Arrow keys + Z/X to fight.",
+    color: "oklch(0.60 0.28 15)",
+  },
+  [GameType.donkeyKong]: {
+    label: "Donkey Kong",
+    emoji: "🦍",
+    description: "Climb to the top!",
+    rules: "Dodge barrels and reach the top to win 2x.",
+    color: "oklch(0.65 0.22 55)",
+  },
+  [GameType.asteroids]: {
+    label: "Asteroids",
+    emoji: "☄️",
+    description: "Blast the asteroids!",
+    rules: "Clear 3 waves of asteroids to win 2x. Arrow keys + Space to shoot.",
+    color: "oklch(0.72 0.22 180)",
+  },
+  [GameType.centipede]: {
+    label: "Centipede",
+    emoji: "🐛",
+    description: "Stop the centipede!",
+    rules: "Shoot 3 centipede waves to win 2x. Arrow keys + Space.",
+    color: "oklch(0.70 0.26 135)",
+  },
+  [GameType.digDug]: {
+    label: "Dig Dug",
+    emoji: "⛏️",
+    description: "Dig and defeat!",
+    rules: "Inflate all enemies to win 2x. Arrow keys to dig, Space to pump.",
+    color: "oklch(0.72 0.22 55)",
+  },
+  [GameType.skeeBall]: {
+    label: "Skee-Ball",
+    emoji: "🎳",
+    description: "Roll for the top ring!",
+    rules: "Score 80+ total points across 3 throws to win 2x. Earns points!",
+    color: "oklch(0.72 0.22 55)",
+  },
+  [GameType.pinball]: {
+    label: "Pinball",
+    emoji: "🕹️",
+    description: "Flip and score big!",
+    rules: "Score 500+ points before losing 3 balls to win 2x. Earns points!",
+    color: "oklch(0.72 0.18 300)",
+  },
 };
 
 const FEATURED_GAMES = new Set([
@@ -297,6 +377,16 @@ const FEATURED_GAMES = new Set([
   GameType.breakout,
   GameType.pacmanStyle,
   GameType.whackAMole,
+  GameType.tetris,
+  GameType.galaga,
+  GameType.frogger,
+  GameType.streetFighter,
+  GameType.donkeyKong,
+  GameType.asteroids,
+  GameType.centipede,
+  GameType.digDug,
+  GameType.skeeBall,
+  GameType.pinball,
 ]);
 
 const QUICK_BETS = [5, 10, 25, 50, 100];
@@ -613,6 +703,66 @@ export default function GamePage() {
           )}
           {gameType === GameType.whackAMole && (
             <WhackAMoleGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.tetris && (
+            <TetrisGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.galaga && (
+            <GalagaGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.frogger && (
+            <FroggerGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.streetFighter && (
+            <StreetFighterGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.donkeyKong && (
+            <DonkeyKongGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.asteroids && (
+            <AsteroidsGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.centipede && (
+            <CentipedeGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.digDug && (
+            <DigDugGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.skeeBall && (
+            <SkeeBallGame
+              balance={balance ?? BigInt(0)}
+              onGameComplete={onGameComplete}
+            />
+          )}
+          {gameType === GameType.pinball && (
+            <PinballGame
               balance={balance ?? BigInt(0)}
               onGameComplete={onGameComplete}
             />

@@ -187,7 +187,17 @@ export enum GameType {
     coinPusher = "coinPusher",
     crashGame = "crashGame",
     breakout = "breakout",
-    pacmanStyle = "pacmanStyle"
+    pacmanStyle = "pacmanStyle",
+    tetris = "tetris",
+    galaga = "galaga",
+    frogger = "frogger",
+    streetFighter = "streetFighter",
+    donkeyKong = "donkeyKong",
+    asteroids = "asteroids",
+    centipede = "centipede",
+    digDug = "digDug",
+    skeeBall = "skeeBall",
+    pinball = "pinball"
 }
 export enum UserRole {
     admin = "admin",

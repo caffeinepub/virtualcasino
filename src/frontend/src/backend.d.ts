@@ -105,7 +105,17 @@ export enum GameType {
     coinPusher = "coinPusher",
     crashGame = "crashGame",
     breakout = "breakout",
-    pacmanStyle = "pacmanStyle"
+    pacmanStyle = "pacmanStyle",
+    tetris = "tetris",
+    galaga = "galaga",
+    frogger = "frogger",
+    streetFighter = "streetFighter",
+    donkeyKong = "donkeyKong",
+    asteroids = "asteroids",
+    centipede = "centipede",
+    digDug = "digDug",
+    skeeBall = "skeeBall",
+    pinball = "pinball"
 }
 export enum UserRole {
     admin = "admin",
@@ -124,7 +134,6 @@ export interface backendInterface {
     getAllProducts(): Promise<Array<Product>>;
     getAllProductsAdmin(): Promise<Array<Product>>;
     getAllRedemptions(): Promise<Array<RedemptionRequest>>;
-    getAllUsers(): Promise<Array<UserSummary>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getDailyWinners(): Promise<Array<DailyWinner>>;
